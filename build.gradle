@@ -1,0 +1,16 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+
+sourceCompatibility = 1.8
+group = 'com.ryanharter.autoparcel'
+version = '0.1-SNAPSHOT'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    compile 'com.google.auto.value:auto-value:1.1-ext-SNAPSHOT'
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+}
