@@ -1,0 +1,74 @@
+apply plugin: 'maven'
+apply plugin: 'signing'
+
+def isReleaseBuild() {
+    !version.contains("SNAPSHOT")
+}
+
+def sonatypeRepositoryUrl
+
+if (isReleaseBuild()) {
+    println "PROCESSOR RELEASE BUILD $version"
+    sonatypeRepositoryUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+} else {
+    println "PROCESSOR DEBUG BUILD $version"
+    sonatypeRepositoryUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
+}
+
+def username = project.hasProperty("nexusUsername") ? project.getProperty("nexusUsername") : ""
+def password = project.hasProperty("nexusPassword") ? project.hasProperty("nexusPassword") : ""
+
+afterEvaluate { project ->
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                beforeDeployment { deployment -> signing.signPom(deployment) }
+
+                repository(url: sonatypeRepositoryUrl) {
+                    authentication(userName: username, password: password)
+                }
+
+                pom.project {
+                    name 'AutoParcel'
+                    groupId ${group}
+                    description 'AutoValue extension to support Android Parcelables'
+                    url 'https://github.com/rharter/auto-parcel'
+                    inceptionYear '2015'
+
+                    scm {
+                        url 'https://github.com/rharter/auto-parcel'
+                        connection 'scm:https://rharter@github.com/rharter/auto-parcel.git'
+                        developerConnection 'scm:git@github.com:rharter/auto-parcel.git'
+                    }
+
+                    developers {
+                        developer {
+                            id 'rharter'
+                            name 'Ryan Harter'
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    signing {
+        required { isReleaseBuild() && gradle.taskGraph.hasTask("uploadArchives") }
+        sign configurations.archives
+    }
+
+    task sourcesJar(type: Jar, dependsOn: classes) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
+    task javadocJar(type: Jar, dependsOn: javadoc) {
+        classifier = 'javadoc'
+        from javadoc.destinationDir
+    }
+
+    artifacts {
+        archives sourcesJar
+        archives javadocJar
+    }
+}

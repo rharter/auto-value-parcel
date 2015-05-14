@@ -9,9 +9,6 @@ import javax.lang.model.type.TypeKind;
 import javax.tools.Diagnostic;
 import java.util.*;
 
-/**
- * Created by rharter on 5/1/15.
- */
 public class AutoParcelExtension implements AutoValueExtension {
 
   Messager getMessager(Context context) {
@@ -59,7 +56,9 @@ public class AutoParcelExtension implements AutoValueExtension {
 
       @Override
       public Collection<String> additionalCode() {
-        return Collections.singleton(getParcelableCode(className, context.properties()));
+        Map<String, ExecutableElement> properties = new HashMap<String, ExecutableElement>(context.properties());
+        properties.remove("describeContents()");
+        return Collections.singleton(getParcelableCode(className, properties));
       }
     };
   }
@@ -86,21 +85,13 @@ public class AutoParcelExtension implements AutoValueExtension {
     List<ExecutableElement> props = new ArrayList<ExecutableElement>(properties.values());
     for (int i = 0; i < props.size(); i++) {
       ExecutableElement prop = props.get(i);
-      if (prop.getSimpleName().equals("describeContents")) {
-        continue;
-      }
-      code.write("    " + prop + " = (" + getCastType(prop) + ") in.readValue(CL);");
-      if (i == props.size() - 1) {
-        code.write("\n");
-      } else {
-        code.writeLn(",");
-      }
+      code.writeLn("    " + prop.getSimpleName() + " = (" + getCastType(prop) + ") in.readValue(CL);");
     }
     code.writeLn("  }");
     code.writeLn("");
     code.writeLn("  @Override public void writeToParcel(Parcel dest, int flags) {");
-    for (String prop : properties.keySet()) {
-      code.writeLn("  dest.writeValue(" + prop + ");");
+    for (ExecutableElement prop : properties.values()) {
+      code.writeLn("    dest.writeValue(" + prop.getSimpleName() + ");");
     }
     code.writeLn("  }");
     code.writeLn("");
@@ -131,7 +122,7 @@ public class AutoParcelExtension implements AutoValueExtension {
   }
 
   public String getCastType(ExecutableElement prop) {
-    return primitive(prop) ? box(prop.getReturnType().getKind()) : prop.asType().toString();
+    return primitive(prop) ? box(prop.getReturnType().getKind()) : prop.getReturnType().toString();
   }
 
   private String box(TypeKind kind) {
