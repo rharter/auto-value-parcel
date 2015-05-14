@@ -1,15 +1,19 @@
 package com.ryanharter.autoparcel;
 
+import com.google.auto.common.MoreTypes;
 import com.google.auto.value.AutoValueExtension;
 
 import javax.annotation.processing.Messager;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 import java.util.*;
 
 public class AutoParcelExtension implements AutoValueExtension {
+
+  Context context;
 
   Messager getMessager(Context context) {
     return context.processingEnvironment().getMessager();
@@ -17,8 +21,6 @@ public class AutoParcelExtension implements AutoValueExtension {
 
   @Override
   public boolean applicable(Context context) {
-    getMessager(context).printMessage(Diagnostic.Kind.NOTE, "Checking applicability: " + context.autoValueClass(), context.autoValueClass());
-
     TypeElement parcelable = context.processingEnvironment().getElementUtils().getTypeElement("android.os.Parcelable");
     return parcelable != null &&
         context.processingEnvironment().getTypeUtils().isAssignable(context.autoValueClass().asType(), parcelable.asType());
@@ -26,7 +28,7 @@ public class AutoParcelExtension implements AutoValueExtension {
 
   @Override
   public AutoValueExtension.GeneratedClass generateClass(final Context context, final String className, final String classToExtend, String classToImplement) {
-    getMessager(context).printMessage(Diagnostic.Kind.NOTE, "Generating class: " + context.autoValueClass(), context.autoValueClass());
+    this.context = context;
     return new AutoValueExtension.GeneratedClass() {
 
       @Override
@@ -57,7 +59,7 @@ public class AutoParcelExtension implements AutoValueExtension {
       @Override
       public Collection<String> additionalCode() {
         Map<String, ExecutableElement> properties = new HashMap<String, ExecutableElement>(context.properties());
-        properties.remove("describeContents()");
+        properties.remove("describeContents");
         return Collections.singleton(getParcelableCode(className, properties));
       }
     };
@@ -85,13 +87,19 @@ public class AutoParcelExtension implements AutoValueExtension {
     List<ExecutableElement> props = new ArrayList<ExecutableElement>(properties.values());
     for (int i = 0; i < props.size(); i++) {
       ExecutableElement prop = props.get(i);
-      code.writeLn("    " + prop.getSimpleName() + " = (" + getCastType(prop) + ") in.readValue(CL);");
+      if (isParcelableType(prop)) {
+        code.writeLn("    " + prop.getSimpleName() + " = (" + getCastType(prop) + ") in.readValue(CL);");
+      } else {
+        code.writeLn("    // " + prop.getSimpleName() + " not a parcelable type.");
+      }
     }
     code.writeLn("  }");
     code.writeLn("");
     code.writeLn("  @Override public void writeToParcel(Parcel dest, int flags) {");
     for (ExecutableElement prop : properties.values()) {
-      code.writeLn("    dest.writeValue(" + prop.getSimpleName() + ");");
+      if (isParcelableType(prop)) {
+        code.writeLn("    dest.writeValue(" + prop.getSimpleName() + ");");
+      }
     }
     code.writeLn("  }");
     code.writeLn("");
@@ -99,6 +107,26 @@ public class AutoParcelExtension implements AutoValueExtension {
     code.writeLn("    return 0;");
     code.writeLn("  }");
     return code.toString();
+  }
+
+  private boolean isParcelableType(ExecutableElement prop) {
+    if (primitive(prop))
+      return true;
+
+    // special case for strings
+    if (getCastType(prop).equals("java.lang.String"))
+      return true;
+
+    TypeElement typeElement = MoreTypes.asTypeElement(prop.getReturnType());
+    for (TypeMirror iface : typeElement.getInterfaces()) {
+      String typeName = context.processingEnvironment().getTypeUtils().asElement(iface).getSimpleName().toString();
+      getMessager(context).printMessage(Diagnostic.Kind.NOTE, "Checking type: " + typeName);
+      if (typeName.equals("android.os.Parcelable")) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   class CodeBuilder {

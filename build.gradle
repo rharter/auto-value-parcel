@@ -14,6 +14,8 @@ repositories {
 
 dependencies {
     compile 'com.google.auto.value:auto-value:1.1-ext-SNAPSHOT'
+    compile 'com.google.auto:auto-common:0.4'
+    compile 'org.apache.commons:commons-lang3:3.4'
 
     testCompile group: 'junit', name: 'junit', version: '4.11'
 }
