@@ -1,0 +1,41 @@
+## Template for additional code to be added to the AutoValue generated object.
+## This template uses the Apache Velocity Template Language (VTL).
+##
+## Comments, like this one, begin with ##. The comment text extends up to and including the newline
+## character at the end of the line. So comments also serve to join a line to the next one.
+## Velocity deletes a newline after a directive (#if, #foreach, #end etc) so ## is not needed there.
+## That does mean that we sometimes need an extra blank line after such a directive.
+##
+## A post-processing step will remove unwanted spaces and blank lines, but will not join two lines.
+
+  public static final android.os.Parcelable.Creator<$className> CREATOR = new android.os.Parcelable.Creator<$className>() {
+    @Override
+    public $className createFromParcel(android.os.Parcel in) {
+      return new $className(in);
+    }
+
+    @Override
+    public ${className}[] newArray(int size) {
+      return new ${className}[size];
+    }
+  };
+
+  private final static java.lang.ClassLoader CL = ${className}.class.getClassLoader();
+
+  private $className(android.os.Parcel in) {
+    this(#foreach ($p in $props)
+      ($p.castType) in.readValue(CL)#if ($foreach.hasNext), #end
+    #end);
+  }
+
+  @Override
+  public void writeToParcel(android.os.Parcel dest, int flags) {
+    #foreach ($p in $props)
+      dest.writeValue($p);
+    #end
+  }
+
+  @Override
+  public int describeContents() {
+    return 0;
+  }
