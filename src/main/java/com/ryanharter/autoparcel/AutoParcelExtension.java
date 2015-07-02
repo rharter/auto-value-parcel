@@ -29,8 +29,6 @@ import java.util.*;
 
 public class AutoParcelExtension implements AutoValueExtension {
 
-  Context context;
-
   Messager getMessager(Context context) {
     return context.processingEnvironment().getMessager();
   }
@@ -48,12 +46,12 @@ public class AutoParcelExtension implements AutoValueExtension {
   }
 
   @Override
-  public boolean mustBeAtEnd() {
+  public boolean mustBeAtEnd(Context context) {
     return true;
   }
 
   @Override
-  public String generateClass(final Context context, final String className, final String classToExtend, String classToImplement) {
+  public String generateClass(final Context context, final String className, final String classToExtend, boolean isFinal) {
     return getParcelableCode(context, className, classToExtend, context.properties());
   }
 
@@ -63,7 +61,7 @@ public class AutoParcelExtension implements AutoValueExtension {
 
     FieldSpec classLoader = FieldSpec
         .builder(ClassName.get(ClassLoader.class), "CL", Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
-        .initializer("$S.class.getClassLoader()", className)
+        .initializer("$N.class.getClassLoader()", className)
         .build();
 
     MethodSpec constructor = generateConstructor(types);
@@ -90,7 +88,8 @@ public class AutoParcelExtension implements AutoValueExtension {
   private Map<String, TypeName> convertPropertiesToTypes(Map<String, ExecutableElement> properties) {
     Map<String, TypeName> types = new LinkedHashMap<String, TypeName>();
     for (Map.Entry<String, ExecutableElement> entry : properties.entrySet()) {
-      types.put(entry.getKey(), TypeName.get(entry.getValue().asType()));
+      if ("describeContents".equals(entry.getKey())) continue;
+      types.put(entry.getKey(), TypeName.get(entry.getValue().getReturnType()));
     }
     return types;
   }
@@ -178,7 +177,7 @@ public class AutoParcelExtension implements AutoValueExtension {
         .addParameter(int.class, "flags");
 
     for (String name : types.keySet()) {
-      builder.addStatement("dest.writeValue($N)", name);
+      builder.addStatement("dest.writeValue($N())", name);
     }
 
     return builder.build();
@@ -193,7 +192,7 @@ public class AutoParcelExtension implements AutoValueExtension {
         .build();
   }
 
-  private boolean isParcelableType(ExecutableElement prop) {
+  private boolean isParcelableType(Context context, ExecutableElement prop) {
     if (primitive(prop))
       return true;
 

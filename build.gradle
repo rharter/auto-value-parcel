@@ -1,11 +1,12 @@
 apply plugin: 'java'
-apply plugin: 'maven'
+apply plugin: 'maven-publish'
 
 targetCompatibility = '1.6'
 sourceCompatibility = '1.6'
 
-group = 'com.ryanharter.autoparcel'
-version = '0.1-SNAPSHOT'
+group = 'com.ryanharter.auto-parcel'
+version = '0.2-SNAPSHOT'
+def artifact = 'auto-parcel'
 
 repositories {
     mavenLocal()
@@ -14,7 +15,7 @@ repositories {
 
 dependencies {
     compile 'com.squareup:javapoet:1.1.0'
-    compile 'com.google.auto.value:auto-value:1.1-ext-SNAPSHOT'
+    compile 'com.google.auto.value:auto-value:1.2-SNAPSHOT'
     compile 'com.google.auto:auto-common:0.4'
     compile 'org.apache.commons:commons-lang3:3.4'
 
@@ -22,4 +23,39 @@ dependencies {
     testCompile 'org.junit.contrib:truth:jar:0.27'
     testCompile 'org.mockito:mockito-core:2.0.26-beta'
     testCompile 'com.google.testing.compile:compile-testing:0.6'
+}
+
+def isReleaseBuild() {
+    return version.contains("SNAPSHOT") == false
+}
+
+def getReleaseRepositoryUrl() {
+    return hasProperty('RELEASE_REPOSITORY_URL') ? RELEASE_REPOSITORY_URL
+            : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+}
+
+def getSnapshotRepositoryUrl() {
+    return hasProperty('SNAPSHOT_REPOSITORY_URL') ? SNAPSHOT_REPOSITORY_URL
+            : "https://oss.sonatype.org/content/repositories/snapshots/"
+}
+
+publishing {
+    publications {
+        processor(MavenPublication) {
+            groupId project.group
+            artifactId artifact
+            version project.version
+
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            url isReleaseBuild() ? getReleaseRepositoryUrl() : getSnapshotRepositoryUrl()
+            credentials() {
+                username NEXUS_USERNAME
+                password NEXUS_PASSWORD
+            }
+        }
+    }
 }

@@ -34,7 +34,7 @@ public class AutoParcelExtensionTest {
 
     FieldSpec classLoader = FieldSpec
         .builder(ClassName.get(ClassLoader.class), "CL", Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
-        .initializer("$S.class.getClassLoader()", "Foo")
+        .initializer("$N.class.getClassLoader()", "Foo")
         .build();
 
     MethodSpec constructor = extension.generateParcelConstructor(properties, classLoader);
@@ -48,7 +48,7 @@ public class AutoParcelExtensionTest {
     String className = "foo.bar.Baz";
     FieldSpec classLoader = FieldSpec
         .builder(ClassName.get(ClassLoader.class), "CL", Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
-        .initializer("$S.class.getClassLoader()", className)
+        .initializer("$N.class.getClassLoader()", className)
         .build();
 
     FieldSpec creator = extension.generateCreator(className, classLoader);
@@ -74,8 +74,8 @@ public class AutoParcelExtensionTest {
     assertThat(writeToParcel.toString()).isEqualTo(""
         + "@java.lang.Override\n"
         + "public void writeToParcel(android.os.Parcel dest, int flags) {\n"
-        + "  dest.writeValue(bar);\n"
-        + "  dest.writeValue(baz);\n"
+        + "  dest.writeValue(bar());\n"
+        + "  dest.writeValue(baz());\n"
         + "}\n");
   }
 
