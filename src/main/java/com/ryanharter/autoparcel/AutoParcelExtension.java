@@ -1,13 +1,29 @@
 package com.ryanharter.autoparcel;
 
+import autovalue.shaded.com.google.common.common.collect.Lists;
 import com.google.auto.common.MoreTypes;
 import com.google.auto.value.AutoValueExtension;
 
+import com.squareup.javapoet.ArrayTypeName;
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.FieldSpec;
+import com.squareup.javapoet.JavaFile;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.TypeSpec;
+import com.squareup.javapoet.TypeVariableName;
+import java.lang.reflect.ParameterizedType;
 import javax.annotation.processing.Messager;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import java.util.*;
 
@@ -22,91 +38,159 @@ public class AutoParcelExtension implements AutoValueExtension {
   @Override
   public boolean applicable(Context context) {
     TypeElement parcelable = context.processingEnvironment().getElementUtils().getTypeElement("android.os.Parcelable");
-    return parcelable != null &&
-        context.processingEnvironment().getTypeUtils().isAssignable(context.autoValueClass().asType(), parcelable.asType());
+    TypeMirror autoValueClass = context.autoValueClass().asType();
+    return isClassOfType(context.processingEnvironment().getTypeUtils(), parcelable.asType(),
+        autoValueClass);
+  }
+
+  boolean isClassOfType(Types typeUtils, TypeMirror type, TypeMirror cls) {
+    return type != null && typeUtils.isAssignable(cls, type);
   }
 
   @Override
-  public AutoValueExtension.GeneratedClass generateClass(final Context context, final String className, final String classToExtend, String classToImplement) {
-    this.context = context;
-    return new AutoValueExtension.GeneratedClass() {
-
-      @Override
-      public String className() {
-        return className;
-      }
-
-      @Override
-      public String source() {
-        return null;
-      }
-
-      @Override
-      public Collection<ExecutableElement> consumedProperties() {
-        return Collections.singleton(context.properties().get("describeContents"));
-      }
-
-      @Override
-      public Collection<String> additionalImports() {
-        return getImports();
-      }
-
-      @Override
-      public Collection<String> additionalInterfaces() {
-        return Collections.singleton("Parcelable");
-      }
-
-      @Override
-      public Collection<String> additionalCode() {
-        Map<String, ExecutableElement> properties = new HashMap<String, ExecutableElement>(context.properties());
-        properties.remove("describeContents");
-        return Collections.singleton(getParcelableCode(className, properties));
-      }
-    };
+  public boolean mustBeAtEnd() {
+    return true;
   }
 
-  private Collection<String> getImports() {
-    return Arrays.asList("android.os.Parcel", "java.lang.ClassLoader", "android.os.Parcelable");
+  @Override
+  public String generateClass(final Context context, final String className, final String classToExtend, String classToImplement) {
+    return getParcelableCode(context, className, classToExtend, context.properties());
   }
 
-  private String getParcelableCode(String className, Map<String, ExecutableElement> properties) {
-    CodeBuilder code = new CodeBuilder();
-    code.writeLn("  public static final Parcelable.Creator<" + className + "> CREATOR = new Parcelable.Creator<" + className + ">() {");
-    code.writeLn("    @Override public " + className + " createFromParcel(android.os.Parcel in) {");
-    code.writeLn("      return new " + className + "(in);");
-    code.writeLn("    }");
-    code.writeLn("");
-    code.writeLn("    @Override public " + className + "[] newArray(int size) {");
-    code.writeLn("      return new " + className + "[size];");
-    code.writeLn("    }");
-    code.writeLn("  };");
-    code.writeLn("");
-    code.writeLn("  private final static ClassLoader CL = " + className + ".class.getClassLoader();");
-    code.writeLn("");
-    code.writeLn("  private " + className + "(Parcel in) {");
-    List<ExecutableElement> props = new ArrayList<ExecutableElement>(properties.values());
-    for (int i = 0; i < props.size(); i++) {
-      ExecutableElement prop = props.get(i);
-      if (isParcelableType(prop)) {
-        code.writeLn("    " + prop.getSimpleName() + " = (" + getCastType(prop) + ") in.readValue(CL);");
+  String getParcelableCode(Context context, String className, String classToExtend,
+                                   Map<String, ExecutableElement> properties) {
+    Map<String, TypeName> types = convertPropertiesToTypes(properties);
+
+    FieldSpec classLoader = FieldSpec
+        .builder(ClassName.get(ClassLoader.class), "CL", Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
+        .initializer("$S.class.getClassLoader()", className)
+        .build();
+
+    MethodSpec constructor = generateConstructor(types);
+    MethodSpec parcelConstructor = generateParcelConstructor(types, classLoader);
+    MethodSpec writeToParcel = generateWriteToParcel(types);
+    MethodSpec describeContents = generateDescribeContents();
+    FieldSpec creator = generateCreator(className, classLoader);
+
+    TypeSpec subclass = TypeSpec.classBuilder(className)
+        .addModifiers(Modifier.FINAL)
+        .superclass(TypeVariableName.get(classToExtend))
+        .addMethod(constructor)
+        .addField(classLoader)
+        .addField(creator)
+        .addMethod(writeToParcel)
+        .addMethod(describeContents)
+        .addMethod(parcelConstructor)
+        .build();
+
+    JavaFile javaFile = JavaFile.builder(context.packageName(), subclass).build();
+    return javaFile.toString();
+  }
+
+  private Map<String, TypeName> convertPropertiesToTypes(Map<String, ExecutableElement> properties) {
+    Map<String, TypeName> types = new LinkedHashMap<String, TypeName>();
+    for (Map.Entry<String, ExecutableElement> entry : properties.entrySet()) {
+      types.put(entry.getKey(), TypeName.get(entry.getValue().asType()));
+    }
+    return types;
+  }
+
+  MethodSpec generateConstructor(Map<String, TypeName> properties) {
+    List<ParameterSpec> params = Lists.newArrayList();
+    for (Map.Entry<String, TypeName> entry : properties.entrySet()) {
+      params.add(ParameterSpec.builder(entry.getValue(), entry.getKey()).build());
+    }
+
+    MethodSpec.Builder builder = MethodSpec.constructorBuilder()
+        .addParameters(params);
+
+    StringBuilder superFormat = new StringBuilder("super(");
+    for (int i = properties.size(); i > 0; i--) {
+      superFormat.append("$N");
+      if (i > 1) superFormat.append(", ");
+    }
+    superFormat.append(")");
+    builder.addStatement(superFormat.toString(), properties.keySet().toArray());
+
+    return builder.build();
+  }
+
+  MethodSpec generateParcelConstructor(Map<String, TypeName> types, FieldSpec classLoader) {
+    MethodSpec.Builder builder = MethodSpec.constructorBuilder()
+        .addModifiers(Modifier.PRIVATE)
+        .addParameter(ClassName.bestGuess("android.os.Parcel"), "in");
+
+    List<TypeName> args = new ArrayList<TypeName>(types.size());
+    List<TypeName> typeNames = new ArrayList<TypeName>(types.values());
+    for (TypeName name : typeNames) {
+      if (name.isPrimitive()) {
+        args.add(name.box());
       } else {
-        code.writeLn("    // " + prop.getSimpleName() + " not a parcelable type.");
+        args.add(name);
       }
     }
-    code.writeLn("  }");
-    code.writeLn("");
-    code.writeLn("  @Override public void writeToParcel(Parcel dest, int flags) {");
-    for (ExecutableElement prop : properties.values()) {
-      if (isParcelableType(prop)) {
-        code.writeLn("    dest.writeValue(" + prop.getSimpleName() + ");");
-      }
+
+    StringBuilder superFormat = new StringBuilder("this(");
+    for (int i = args.size(); i > 0; i--) {
+      superFormat.append("($T) in.readValue(" + classLoader.name + ")");
+      if (i > 1) superFormat.append(", ");
     }
-    code.writeLn("  }");
-    code.writeLn("");
-    code.writeLn("  @Override public int describeContents() {");
-    code.writeLn("    return 0;");
-    code.writeLn("  }");
-    return code.toString();
+    superFormat.append(")");
+    builder.addStatement(superFormat.toString(), args.toArray());
+    return builder.build();
+  }
+
+  FieldSpec generateCreator(String cls, FieldSpec classLoader) {
+    ClassName className = ClassName.bestGuess(cls);
+    ClassName creator = ClassName.bestGuess("android.os.Parcelable.Creator");
+    TypeName creatorOfClass = ParameterizedTypeName.get(creator, className);
+
+    TypeSpec creatorImpl = TypeSpec.anonymousClassBuilder("")
+        .superclass(creatorOfClass)
+        .addMethod(MethodSpec.methodBuilder("createFromParcel")
+            .addAnnotation(Override.class)
+            .addModifiers(Modifier.PUBLIC)
+            .returns(className)
+            .addParameter(ClassName.bestGuess("android.os.Parcel"), "in")
+            .addStatement("return new $T(in)", className)
+            .build())
+        .addMethod(MethodSpec.methodBuilder("newArray")
+            .addAnnotation(Override.class)
+            .addModifiers(Modifier.PUBLIC)
+            .returns(ArrayTypeName.of(className))
+            .addParameter(int.class, "size")
+            .addStatement("return new $T[size]", className)
+            .build())
+        .build();
+
+    return FieldSpec
+        .builder(creatorOfClass, "CREATOR", Modifier.PRIVATE,
+            Modifier.FINAL, Modifier.STATIC)
+        .initializer(creatorImpl.toString())
+        .build();
+  }
+
+  MethodSpec generateWriteToParcel(Map<String, TypeName> types) {
+    MethodSpec.Builder builder = MethodSpec.methodBuilder("writeToParcel")
+        .addAnnotation(Override.class)
+        .addModifiers(Modifier.PUBLIC)
+        .addParameter(ClassName.bestGuess("android.os.Parcel"), "dest")
+        .addParameter(int.class, "flags");
+
+    for (String name : types.keySet()) {
+      builder.addStatement("dest.writeValue($N)", name);
+    }
+
+    return builder.build();
+  }
+
+  MethodSpec generateDescribeContents() {
+    return MethodSpec.methodBuilder("describeContents")
+        .addAnnotation(Override.class)
+        .addModifiers(Modifier.PUBLIC)
+        .returns(int.class)
+        .addStatement("return 0")
+        .build();
   }
 
   private boolean isParcelableType(ExecutableElement prop) {
