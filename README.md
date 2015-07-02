@@ -7,8 +7,10 @@ An extension for Google's [AutoValue](https://github.com/google/auto) that suppo
 Simply include AutoParcel in your project and make any of your `@AutoValue` annotated classed implement `Parcelable`.
 
 ```java
-@AutoValue public abstract class Foo implements Parcelable {
-  public asbtract String bar();
+@AutoValue
+public abstract class Foo implements Parcelable {
+
+  public abstract String bar();
   
   // needed workaround for now. 
   @Override public int describeContents() {
