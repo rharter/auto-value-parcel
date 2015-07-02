@@ -2,6 +2,8 @@
 
 An extension for Google's [AutoValue](https://github.com/google/auto) that supports Android's Parcelable interface.
 
+**Note**: This is a very early version that won't work with the released AutoValue until a [PR](https://github.com/google/auto/pull/237) has been merged.
+
 ## Usage
 
 Simply include AutoParcel in your project and make any of your `@AutoValue` annotated classed implement `Parcelable`.
