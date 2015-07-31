@@ -4,7 +4,7 @@ apply plugin: 'maven-publish'
 targetCompatibility = '1.6'
 sourceCompatibility = '1.6'
 
-group = 'com.ryanharter.auto-parcel'
+group = 'com.ryanharter.autoparcel'
 version = '0.2-SNAPSHOT'
 def artifact = 'auto-parcel'
 
