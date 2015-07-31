@@ -212,26 +212,6 @@ public class AutoParcelExtension implements AutoValueExtension {
     return false;
   }
 
-  class CodeBuilder {
-
-    private StringBuilder code = new StringBuilder();
-
-    CodeBuilder writeLn(String code) {
-      this.code.append(code).append("\n");
-      return this;
-    }
-
-    CodeBuilder write(String code) {
-      this.code.append(code);
-      return this;
-    }
-
-    @Override
-    public String toString() {
-      return code.toString();
-    }
-  }
-
   public String getCastType(ExecutableElement prop) {
     return primitive(prop) ? box(prop.getReturnType().getKind()) : prop.getReturnType().toString();
   }
