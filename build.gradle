@@ -39,6 +39,14 @@ def getSnapshotRepositoryUrl() {
             : "https://oss.sonatype.org/content/repositories/snapshots/"
 }
 
+def getRepositoryUsername() {
+    return hasProperty('SONATYPE_NEXUS_USERNAME') ? SONATYPE_NEXUS_USERNAME : ""
+}
+
+def getRepositoryPassword() {
+    return hasProperty('SONATYPE_NEXUS_PASSWORD') ? SONATYPE_NEXUS_PASSWORD : ""
+}
+
 publishing {
     publications {
         processor(MavenPublication) {
@@ -53,8 +61,8 @@ publishing {
         maven {
             url isReleaseBuild() ? getReleaseRepositoryUrl() : getSnapshotRepositoryUrl()
             credentials() {
-                username NEXUS_USERNAME
-                password NEXUS_PASSWORD
+                username getRepositoryUsername()
+                password getRepositoryPassword()
             }
         }
     }
