@@ -1,6 +1,7 @@
 package com.ryanharter.autoparcel;
 
 import android.os.Parcelable;
+import autovalue.shaded.com.google.common.auto.common.MoreElements;
 import com.google.auto.common.MoreTypes;
 import com.google.auto.value.AutoValueExtension;
 import com.google.common.collect.ImmutableList;
@@ -151,7 +152,8 @@ public class AutoParcelExtensionTest {
 
   private AutoValueExtension.Context createContext(TypeElement type) {
     String packageName = getPackage(type).getQualifiedName().toString();
-    Set<ExecutableElement> methods = methodsToImplement(type, getLocalAndInheritedMethods(type, elements));
+    Set<ExecutableElement> allMethods = MoreElements.getLocalAndInheritedMethods(type, elements);
+    Set<ExecutableElement> methods = methodsToImplement(type, allMethods);
     Map<String, ExecutableElement> properties = new LinkedHashMap<String, ExecutableElement>();
     for (ExecutableElement e : methods) {
       properties.put(e.getSimpleName().toString(), e);
@@ -214,55 +216,6 @@ public class AutoParcelExtensionTest {
     }
 
     return (PackageElement)element;
-  }
-
-  public static ImmutableSet<ExecutableElement> getLocalAndInheritedMethods(TypeElement type, Elements elementUtils) {
-    LinkedHashMultimap methodMap = LinkedHashMultimap.create();
-    getLocalAndInheritedMethods(getPackage(type), type, methodMap);
-    LinkedHashSet overridden = new LinkedHashSet();
-    Iterator methods = methodMap.keySet().iterator();
-
-    while(methods.hasNext()) {
-      String methodName = (String)methods.next();
-      ImmutableList methodList = ImmutableList.copyOf(methodMap.get(methodName));
-
-      for(int i = 0; i < methodList.size(); ++i) {
-        ExecutableElement methodI = (ExecutableElement)methodList.get(i);
-
-        for(int j = i + 1; j < methodList.size(); ++j) {
-          ExecutableElement methodJ = (ExecutableElement)methodList.get(j);
-          if(elementUtils.overrides(methodJ, methodI, type)) {
-            overridden.add(methodI);
-          }
-        }
-      }
-    }
-
-    LinkedHashSet var11 = new LinkedHashSet(methodMap.values());
-    var11.removeAll(overridden);
-    return ImmutableSet.copyOf(var11);
-  }
-
-  private static void getLocalAndInheritedMethods(PackageElement pkg, TypeElement type, SetMultimap<String, ExecutableElement> methods) {
-    Iterator i$ = type.getInterfaces().iterator();
-
-    while(i$.hasNext()) {
-      TypeMirror method = (TypeMirror)i$.next();
-      getLocalAndInheritedMethods(pkg, MoreTypes.asTypeElement(method), methods);
-    }
-
-    if(type.getSuperclass().getKind() != TypeKind.NONE) {
-      getLocalAndInheritedMethods(pkg, MoreTypes.asTypeElement(type.getSuperclass()), methods);
-    }
-
-    i$ = ElementFilter.methodsIn(type.getEnclosedElements()).iterator();
-
-    while(i$.hasNext()) {
-      ExecutableElement method1 = (ExecutableElement)i$.next();
-      if(!method1.getModifiers().contains(Modifier.STATIC)) {
-        methods.put(method1.getSimpleName().toString(), method1);
-      }
-    }
   }
 
   private ImmutableSet<ExecutableElement> methodsToImplement(

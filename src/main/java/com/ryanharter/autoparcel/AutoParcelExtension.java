@@ -35,11 +35,11 @@ public class AutoParcelExtension implements AutoValueExtension {
 
   @Override
   public boolean applicable(Context context) {
-    TypeElement parcelable = context.processingEnvironment().getElementUtils().getTypeElement("android.os.Parcelable");
+    TypeElement parcelable = context.processingEnvironment().getElementUtils()
+        .getTypeElement("android.os.Parcelable");
     TypeMirror autoValueClass = context.autoValueClass().asType();
     return TypeSimplifier.isClassOfType(context.processingEnvironment().getTypeUtils(),
-        parcelable.asType(),
-        autoValueClass);
+        parcelable.asType(), autoValueClass);
   }
 
   @Override
@@ -48,7 +48,8 @@ public class AutoParcelExtension implements AutoValueExtension {
   }
 
   @Override
-  public String generateClass(final Context context, final String className, final String classToExtend, boolean isFinal) {
+  public String generateClass(final Context context, final String className,
+                              final String classToExtend, boolean isFinal) {
     return getParcelableCode(context, className, classToExtend, context.properties());
   }
 
@@ -59,7 +60,8 @@ public class AutoParcelExtension implements AutoValueExtension {
     Map<String, TypeName> types = convertPropertiesToTypes(properties);
 
     FieldSpec classLoader = FieldSpec
-        .builder(ClassName.get(ClassLoader.class), "CL", Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
+        .builder(ClassName.get(ClassLoader.class), "CL", Modifier.PRIVATE, Modifier.FINAL,
+            Modifier.STATIC)
         .initializer("$N.class.getClassLoader()", className)
         .build();
 
@@ -84,7 +86,8 @@ public class AutoParcelExtension implements AutoValueExtension {
     return javaFile.toString();
   }
 
-  private void validateProperties(ProcessingEnvironment env, Map<String, ExecutableElement> properties) {
+  private void validateProperties(ProcessingEnvironment env,
+                                  Map<String, ExecutableElement> properties) {
     TypeElement parcelable = env.getElementUtils().getTypeElement("android.os.Parcelable");
     TypeMirror serializable = TypeSimplifier.typeFromClass(env.getTypeUtils(),
         env.getElementUtils(), Serializable.class);
@@ -100,7 +103,8 @@ public class AutoParcelExtension implements AutoValueExtension {
     }
   }
 
-  private Map<String, TypeName> convertPropertiesToTypes(Map<String, ExecutableElement> properties) {
+  private Map<String, TypeName> convertPropertiesToTypes(
+      Map<String, ExecutableElement> properties) {
     Map<String, TypeName> types = new LinkedHashMap<String, TypeName>();
     for (Map.Entry<String, ExecutableElement> entry : properties.entrySet()) {
       if ("describeContents".equals(entry.getKey())) continue;
@@ -217,7 +221,8 @@ public class AutoParcelExtension implements AutoValueExtension {
 
     TypeElement typeElement = MoreTypes.asTypeElement(prop.getReturnType());
     for (TypeMirror iface : typeElement.getInterfaces()) {
-      String typeName = context.processingEnvironment().getTypeUtils().asElement(iface).getSimpleName().toString();
+      String typeName = context.processingEnvironment().getTypeUtils().asElement(iface)
+          .getSimpleName().toString();
       getMessager(context).printMessage(Diagnostic.Kind.NOTE, "Checking type: " + typeName);
       if (typeName.equals("android.os.Parcelable")) {
         return true;
