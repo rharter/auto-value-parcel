@@ -2,7 +2,7 @@
 
 An extension for Google's [AutoValue](https://github.com/google/auto) that supports Android's Parcelable interface.
 
-**Note**: This is a very early version that won't work with the released AutoValue until a [PR](https://github.com/google/auto/pull/237) has been merged.
+**Note**: This is an early version that requires the extension support currently in AutoValue 1.2-SNAPSHOT.
 
 ## Usage
 
@@ -13,10 +13,6 @@ Simply include AutoParcel in your project and make any of your `@AutoValue` anno
 
   public abstract String bar();
   
-  // needed workaround for now. 
-  @Override public int describeContents() {
-    return 0;
-  }
 }
 ```
 

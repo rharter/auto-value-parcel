@@ -1,6 +1,7 @@
 package com.ryanharter.autoparcel;
 
 import autovalue.shaded.com.google.common.common.collect.Lists;
+import autovalue.shaded.com.google.common.common.collect.Sets;
 import com.google.auto.common.MoreTypes;
 import com.google.auto.value.AutoValueExtension;
 
@@ -48,6 +49,11 @@ public class AutoParcelExtension implements AutoValueExtension {
   @Override
   public boolean mustBeAtEnd(Context context) {
     return true;
+  }
+
+  @Override
+  public Collection<String> consumeProperties(Context context) {
+    return Sets.newHashSet("describeContents", "writeToParcel");
   }
 
   @Override
