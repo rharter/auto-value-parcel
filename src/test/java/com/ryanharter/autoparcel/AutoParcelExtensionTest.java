@@ -1,5 +1,6 @@
 package com.ryanharter.autoparcel;
 
+import android.os.Parcelable;
 import com.google.auto.common.MoreTypes;
 import com.google.auto.value.AutoValueExtension;
 import com.google.common.collect.ImmutableList;
@@ -63,8 +64,16 @@ public class AutoParcelExtensionTest {
     TypeElement type = elements.getTypeElement(SampleTypeWithNonSerializable.class.getCanonicalName());
     AutoValueExtension.Context context = createContext(type);
 
-    extension.generateClass(context, "$Test_AnnotatedType", "AnnotatedType", true);
+    extension.generateClass(context, "Test_AnnotatedType", "SampleTypeWithNonSerializable", true);
     fail();
+  }
+
+  @Test public void acceptsParcelableProperties() throws Exception {
+    TypeElement type = elements.getTypeElement(SampleTypeWithParcelable.class.getCanonicalName());
+    AutoValueExtension.Context context = createContext(type);
+
+    String generated = extension.generateClass(context, "Test_TypeWithParcelable", "SampleTypeWithParcelable", true);
+    assertThat(generated).isNotNull();
   }
 
   @Test public void generatesConstructorUsingAllParams() throws Exception {
@@ -183,11 +192,19 @@ public class AutoParcelExtensionTest {
     }
   }
 
-  abstract class SampleTypeWithNonSerializable {
+  abstract class SampleTypeWithNonSerializable implements Parcelable {
     abstract int primitive();
     abstract String serializable();
     abstract NonSerializable nonSerializable();
   }
+
+  abstract class SampleTypeWithParcelable implements Parcelable {
+    abstract int primitive();
+    abstract String serializable();
+    abstract ParcelableProperty parcelable();
+  }
+
+  abstract class ParcelableProperty implements Parcelable {}
 
   class NonSerializable {}
 
