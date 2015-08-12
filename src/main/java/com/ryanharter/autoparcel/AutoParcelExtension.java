@@ -48,11 +48,6 @@ public class AutoParcelExtension implements AutoValueExtension {
   }
 
   @Override
-  public Collection<String> consumeProperties(Context context) {
-    return Sets.newHashSet("describeContents", "writeToParcel");
-  }
-
-  @Override
   public String generateClass(final Context context, final String className, final String classToExtend, boolean isFinal) {
     return getParcelableCode(context, className, classToExtend, context.properties());
   }
@@ -100,7 +95,7 @@ public class AutoParcelExtension implements AutoValueExtension {
           !TypeSimplifier.isClassOfType(env.getTypeUtils(), serializable, type)) {
         env.getMessager().printMessage(Diagnostic.Kind.ERROR, "AutoValue property " +
             name.getSimpleName() + " is not primitive, Parcelable or Serializable.", name);
-        throw new RuntimeException();
+        throw new AutoParcelException();
       }
     }
   }
