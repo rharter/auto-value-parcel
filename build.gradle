@@ -11,6 +11,9 @@ def artifact = 'auto-parcel'
 repositories {
     mavenLocal()
     mavenCentral()
+    maven {
+        url 'http://oss.sonatype.org/content/repositories/snapshots'
+    }
 }
 
 dependencies {
