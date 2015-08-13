@@ -1,5 +1,7 @@
 # AutoParcel
 
+[![Build Status](https://travis-ci.org/rharter/auto-parcel.svg?branch=master)](https://travis-ci.org/rharter/auto-parcel)
+
 An extension for Google's [AutoValue](https://github.com/google/auto) that supports Android's Parcelable interface.
 
 **Note**: This is an early version that requires the extension support currently in AutoValue 1.2-SNAPSHOT.
