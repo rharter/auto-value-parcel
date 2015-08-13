@@ -60,13 +60,14 @@ public class AutoParcelExtensionTest {
     processingEnvironment = new TestProcessingEnvironment(messager, elements, types);
   }
 
-  @Test(expected = AutoParcelException.class)
-  public void throwsForNonParcelableProperty() throws Exception {
+  @Test public void throwsForNonParcelableProperty() throws Exception {
     TypeElement type = elements.getTypeElement(SampleTypeWithNonSerializable.class.getCanonicalName());
     AutoValueExtension.Context context = createContext(type);
 
-    extension.generateClass(context, "Test_AnnotatedType", "SampleTypeWithNonSerializable", true);
-    fail();
+    try {
+      extension.generateClass(context, "Test_AnnotatedType", "SampleTypeWithNonSerializable", true);
+      fail();
+    } catch (AutoParcelException e) {}
   }
 
   @Test public void acceptsParcelableProperties() throws Exception {
@@ -151,7 +152,7 @@ public class AutoParcelExtensionTest {
 
 
   private AutoValueExtension.Context createContext(TypeElement type) {
-    String packageName = getPackage(type).getQualifiedName().toString();
+    String packageName = MoreElements.getPackage(type).getQualifiedName().toString();
     Set<ExecutableElement> allMethods = MoreElements.getLocalAndInheritedMethods(type, elements);
     Set<ExecutableElement> methods = methodsToImplement(type, allMethods);
     Map<String, ExecutableElement> properties = new LinkedHashMap<String, ExecutableElement>();
@@ -209,14 +210,6 @@ public class AutoParcelExtensionTest {
   abstract class ParcelableProperty implements Parcelable {}
 
   class NonSerializable {}
-
-  public static PackageElement getPackage(Element element) {
-    while(element.getKind() != ElementKind.PACKAGE) {
-      element = element.getEnclosingElement();
-    }
-
-    return (PackageElement)element;
-  }
 
   private ImmutableSet<ExecutableElement> methodsToImplement(
       TypeElement autoValueClass, Set<ExecutableElement> methods) {
