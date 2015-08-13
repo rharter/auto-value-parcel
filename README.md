@@ -13,6 +13,10 @@ Simply include AutoParcel in your project and make any of your `@AutoValue` anno
 
   public abstract String bar();
   
+  // needed workaround for now. 
+  @Override public int describeContents() {
+    return 0;
+  }
 }
 ```
 
