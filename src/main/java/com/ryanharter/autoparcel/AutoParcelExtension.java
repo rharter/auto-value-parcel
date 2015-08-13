@@ -57,11 +57,12 @@ public class AutoParcelExtension implements AutoValueExtension {
     validateProperties(context.processingEnvironment(), properties);
 
     Map<String, TypeName> types = convertPropertiesToTypes(properties);
+    TypeName type = ClassName.bestGuess(className);
 
     FieldSpec classLoader = FieldSpec
         .builder(ClassName.get(ClassLoader.class), "CL", Modifier.PRIVATE, Modifier.FINAL,
             Modifier.STATIC)
-        .initializer("$T.class.getClassLoader()", className)
+        .initializer("$T.class.getClassLoader()", type)
         .build();
 
     MethodSpec constructor = generateConstructor(types);
