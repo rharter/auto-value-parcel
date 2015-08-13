@@ -1,20 +1,71 @@
 package com.ryanharter.autoparcel;
 
+import android.os.Parcelable;
+import com.google.auto.common.MoreElements;
+import com.google.auto.value.AutoValueExtension;
+import com.google.common.collect.ImmutableSet;
+import com.google.testing.compile.CompilationRule;
+import com.ryanharter.autoparcel.util.TestMessager;
+import com.ryanharter.autoparcel.util.TestProcessingEnvironment;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
-import java.util.HashMap;
+
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
+import javax.annotation.processing.Messager;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
+
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.fail;
 
 public class AutoParcelExtensionTest {
 
+  public @Rule CompilationRule rule = new CompilationRule();
+
   AutoParcelExtension extension = new AutoParcelExtension();
+
+  private Elements elements;
+  private Types types;
+  private ProcessingEnvironment processingEnvironment;
+
+  @Before public void setup() {
+    Messager messager = new TestMessager();
+    elements = rule.getElements();
+    types = rule.getTypes();
+    processingEnvironment = new TestProcessingEnvironment(messager, elements, types);
+  }
+
+  @Test public void throwsForNonParcelableProperty() throws Exception {
+    TypeElement type = elements.getTypeElement(SampleTypeWithNonSerializable.class.getCanonicalName());
+    AutoValueExtension.Context context = createContext(type);
+
+    try {
+      extension.generateClass(context, "Test_AnnotatedType", "SampleTypeWithNonSerializable", true);
+      fail();
+    } catch (AutoParcelException e) {}
+  }
+
+  @Test public void acceptsParcelableProperties() throws Exception {
+    TypeElement type = elements.getTypeElement(SampleTypeWithParcelable.class.getCanonicalName());
+    AutoValueExtension.Context context = createContext(type);
+
+    String generated = extension.generateClass(context, "Test_TypeWithParcelable", "SampleTypeWithParcelable", true);
+    assertThat(generated).isNotNull();
+  }
 
   @Test public void generatesConstructorUsingAllParams() throws Exception {
     Map<String, TypeName> properties = new LinkedHashMap<String, TypeName>();
@@ -86,6 +137,81 @@ public class AutoParcelExtensionTest {
         + "public int describeContents() {\n"
         + "  return 0;\n"
         + "}\n");
+  }
+
+
+  private AutoValueExtension.Context createContext(TypeElement type) {
+    String packageName = MoreElements.getPackage(type).getQualifiedName().toString();
+    Set<ExecutableElement> allMethods = MoreElements.getLocalAndInheritedMethods(type, elements);
+    Set<ExecutableElement> methods = methodsToImplement(type, allMethods);
+    Map<String, ExecutableElement> properties = new LinkedHashMap<String, ExecutableElement>();
+    for (ExecutableElement e : methods) {
+      properties.put(e.getSimpleName().toString(), e);
+    }
+
+    return new TestContext(processingEnvironment, packageName, type, properties);
+  }
+
+  private static class TestContext implements AutoValueExtension.Context {
+
+    private final ProcessingEnvironment processingEnvironment;
+    private final String packageName;
+    private final TypeElement autoValueClass;
+    private final Map<String, ExecutableElement> properties;
+
+    public TestContext(ProcessingEnvironment processingEnvironment, String packageName,
+                       TypeElement autoValueClass, Map<String, ExecutableElement> properties) {
+      this.processingEnvironment = processingEnvironment;
+      this.packageName = packageName;
+      this.autoValueClass = autoValueClass;
+      this.properties = properties;
+    }
+
+    public ProcessingEnvironment processingEnvironment() {
+      return processingEnvironment;
+    }
+
+    public String packageName() {
+      return packageName;
+    }
+
+    public TypeElement autoValueClass() {
+      return autoValueClass;
+    }
+
+    public Map<String, ExecutableElement> properties() {
+      return properties;
+    }
+  }
+
+  abstract class SampleTypeWithNonSerializable implements Parcelable {
+    abstract int primitive();
+    abstract String serializable();
+    abstract NonSerializable nonSerializable();
+  }
+
+  abstract class SampleTypeWithParcelable implements Parcelable {
+    abstract int primitive();
+    abstract String serializable();
+    abstract ParcelableProperty parcelable();
+  }
+
+  abstract class ParcelableProperty implements Parcelable {}
+
+  class NonSerializable {}
+
+  private ImmutableSet<ExecutableElement> methodsToImplement(
+      TypeElement autoValueClass, Set<ExecutableElement> methods) {
+    ImmutableSet.Builder<ExecutableElement> toImplement = ImmutableSet.builder();
+    for (ExecutableElement method : methods) {
+      if (method.getModifiers().contains(Modifier.ABSTRACT)
+          && !Arrays.asList("toString", "hashCode", "equals").contains(method.getSimpleName())) {
+        if (method.getParameters().isEmpty() && method.getReturnType().getKind() != TypeKind.VOID) {
+          toImplement.add(method);
+        }
+      }
+    }
+    return toImplement.build();
   }
 
 }

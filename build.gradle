@@ -16,11 +16,11 @@ repositories {
 dependencies {
     compile 'com.squareup:javapoet:1.1.0'
     compile 'com.google.auto.value:auto-value:1.2-SNAPSHOT'
-    compile 'com.google.auto:auto-common:0.4'
+    compile 'com.google.auto:auto-common:1.0-SNAPSHOT'
     compile 'org.apache.commons:commons-lang3:3.4'
 
     testCompile 'junit:junit:4.11'
-    testCompile 'org.junit.contrib:truth:jar:0.27'
+    testCompile 'com.google.truth:truth:jar:0.27'
     testCompile 'org.mockito:mockito-core:2.0.26-beta'
     testCompile 'com.google.testing.compile:compile-testing:0.6'
 }
