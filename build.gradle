@@ -1,12 +1,15 @@
 apply plugin: 'java'
 apply plugin: 'maven-publish'
 
+group = GROUP
+version = VERSION_NAME
+def artifact = POM_ARTIFACT_ID
+
 repositories {
-    mavenLocal()
-    mavenCentral()
     maven {
         url 'http://oss.sonatype.org/content/repositories/snapshots'
     }
+    mavenCentral()
 }
 
 dependencies {
@@ -46,9 +49,9 @@ def getRepositoryPassword() {
 publishing {
     publications {
         processor(MavenPublication) {
-            groupId GROUP
-            artifactId POM_ARTIFACT_ID
-            version VERSION_NAME
+            groupId group
+            artifactId artifact
+            version version
 
             from components.java
         }
