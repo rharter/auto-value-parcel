@@ -49,9 +49,9 @@ def getRepositoryPassword() {
 publishing {
     publications {
         processor(MavenPublication) {
-            groupId group
+            groupId project.group
             artifactId artifact
-            version version
+            version project.version
 
             from components.java
         }
