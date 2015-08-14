@@ -3,16 +3,20 @@ package com.ryanharter.auto.value.parcel;
 import android.os.Parcelable;
 import com.google.auto.common.MoreElements;
 import com.google.auto.value.AutoValueExtension;
+import com.google.auto.value.processor.AutoValueProcessor;
 import com.google.common.collect.ImmutableSet;
 import com.google.testing.compile.CompilationRule;
+import com.google.testing.compile.JavaFileObjects;
 import com.ryanharter.auto.value.parcel.util.TestMessager;
 import com.ryanharter.auto.value.parcel.util.TestProcessingEnvironment;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
+import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -25,11 +29,14 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 
+import javax.tools.JavaFileObject;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import static com.google.common.truth.Truth.assertAbout;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
 import static org.junit.Assert.fail;
 
 public class AutoValueParcelExtensionTest {
@@ -42,11 +49,94 @@ public class AutoValueParcelExtensionTest {
   private Types types;
   private ProcessingEnvironment processingEnvironment;
 
+  private JavaFileObject parcelable;
+  private JavaFileObject parcel;
+
   @Before public void setup() {
     Messager messager = new TestMessager();
     elements = rule.getElements();
     types = rule.getTypes();
     processingEnvironment = new TestProcessingEnvironment(messager, elements, types);
+
+    parcelable = JavaFileObjects.forSourceString("android.os.Parcelable", ""
+        + "package android.os;\n"
+        + "public interface Parcelable {\n"
+        + "public interface Creator<T> {\n"
+        + "  public T createFromParcel(Parcel source);\n"
+        + "  public T[] newArray(int size);\n"
+        + "}"
+        + "int describeContents();\n"
+        + "void writeToParcel(Parcel in, int flags);\n"
+        + "}\n");
+    parcel = JavaFileObjects.forSourceString("android.os.Parcel", ""
+        + "package android.os;\n"
+        + "public interface Parcel {\n"
+        + "Object readValue(ClassLoader cl);\n"
+        + "void writeValue(Object o);\n"
+        + "}");
+  }
+
+  @Test public void simple() {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Test", ""
+            + "package test;\n"
+            + "import android.os.Parcelable;\n"
+            + "import com.google.auto.value.AutoValue;\n"
+            + "@AutoValue public abstract class Test implements Parcelable {\n"
+            + "public abstract int a();\n"
+            + "public abstract Double b();\n"
+            + "public abstract String c();\n"
+            // TODO get rid of this soon!
+            + "public int describeContents() {\n"
+            + "return 0;\n"
+            + "}"
+            + "}"
+    );
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test/AutoValue_Test", ""
+        + "package test;\n"
+        + "import android.os.Parcel;\n"
+        + "import android.os.Parcelable;\n"
+        + "import java.lang.ClassLoader;\n"
+        + "import java.lang.Double;\n"
+        + "import java.lang.Integer;\n"
+        + "import java.lang.Override;\n"
+        + "import java.lang.String;\n"
+        + "final class AutoValue_Test extends $AutoValue_Test {\n"
+        + "  private static final ClassLoader CL = AutoValue_Test.class.getClassLoader();\n"
+        + "  private static final Parcelable.Creator<AutoValue_Test> CREATOR = new android.os.Parcelable.Creator<AutoValue_Test>() {\n"
+        + "    @java.lang.Override\n"
+        + "    public AutoValue_Test createFromParcel(android.os.Parcel in) {\n"
+        + "      return new AutoValue_Test(in);\n"
+        + "    }\n"
+        + "    @java.lang.Override\n"
+        + "    public AutoValue_Test[] newArray(int size) {\n"
+        + "      return new AutoValue_Test[size];\n"
+        + "    }\n"
+        + "  };\n"
+        + "  AutoValue_Test(int a, Double b, String c) {\n"
+        + "    super(a, b, c);\n"
+        + "  }\n"
+        + "  private AutoValue_Test(Parcel in) {\n"
+        + "    this((Integer) in.readValue(CL), (Double) in.readValue(CL), (String) in.readValue(CL));\n"
+        + "  }\n"
+        + "  @Override\n"
+        + "  public void writeToParcel(Parcel dest, int flags) {\n"
+        + "    dest.writeValue(a());\n"
+        + "    dest.writeValue(b());\n"
+        + "    dest.writeValue(c());\n"
+        + "  }\n"
+        + "  @Override\n"
+        + "  public int describeContents() {\n"
+        + "    return 0;\n"
+        + "  }\n"
+        + "}");
+
+    assertAbout(javaSources())
+        .that(Arrays.asList(parcel, parcelable, source))
+        .processedWith(new AutoValueProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
   }
 
   @Test public void throwsForNonParcelableProperty() throws Exception {
@@ -66,79 +156,6 @@ public class AutoValueParcelExtensionTest {
     String generated = extension.generateClass(context, "Test_TypeWithParcelable", "SampleTypeWithParcelable", true);
     assertThat(generated).isNotNull();
   }
-
-  @Test public void generatesConstructorUsingAllParams() throws Exception {
-    Map<String, TypeName> properties = new LinkedHashMap<String, TypeName>();
-    properties.put("bar", TypeName.get(Double.class));
-    properties.put("baz", TypeName.get(Integer.class));
-    MethodSpec constructor = extension.generateConstructor(properties);
-    assertThat(constructor.toString()).isEqualTo(""
-        + "Constructor(java.lang.Double bar, java.lang.Integer baz) {\n"
-        + "  super(bar, baz);\n"
-        + "}\n");
-  }
-
-  @Test public void generatesParcelConstructor() throws Exception {
-    Map<String, TypeName> properties = new LinkedHashMap<String, TypeName>();
-    properties.put("bar", TypeName.get(Double.class));
-    properties.put("baz", TypeName.get(Integer.class));
-
-    FieldSpec classLoader = FieldSpec
-        .builder(ClassName.get(ClassLoader.class), "CL", Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
-        .initializer("$N.class.getClassLoader()", "Foo")
-        .build();
-
-    MethodSpec constructor = extension.generateParcelConstructor(properties, classLoader);
-    assertThat(constructor.toString()).isEqualTo(""
-        + "private Constructor(android.os.Parcel in) {\n"
-        + "  this((java.lang.Double) in.readValue(CL), (java.lang.Integer) in.readValue(CL));\n"
-        + "}\n");
-  }
-
-  @Test public void generatesCreator() throws Exception {
-    String className = "foo.bar.Baz";
-    FieldSpec classLoader = FieldSpec
-        .builder(ClassName.get(ClassLoader.class), "CL", Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
-        .initializer("$N.class.getClassLoader()", className)
-        .build();
-
-    FieldSpec creator = extension.generateCreator(className, classLoader);
-    assertThat(creator.toString()).isEqualTo(""
-        + "private static final android.os.Parcelable.Creator<foo.bar.Baz> CREATOR = new android.os.Parcelable.Creator<foo.bar.Baz>() {\n"
-        + "  @java.lang.Override\n"
-        + "  public foo.bar.Baz createFromParcel(android.os.Parcel in) {\n"
-        + "    return new foo.bar.Baz(in);\n"
-        + "  }\n"
-        + "\n"
-        + "  @java.lang.Override\n"
-        + "  public foo.bar.Baz[] newArray(int size) {\n"
-        + "    return new foo.bar.Baz[size];\n"
-        + "  }\n"
-        + "};\n");
-  }
-
-  @Test public void generatesWriteToParcel() throws Exception {
-    Map<String, TypeName> properties = new LinkedHashMap<String, TypeName>();
-    properties.put("bar", TypeName.get(Double.class));
-    properties.put("baz", TypeName.get(Integer.class));
-    MethodSpec writeToParcel = extension.generateWriteToParcel(properties);
-    assertThat(writeToParcel.toString()).isEqualTo(""
-        + "@java.lang.Override\n"
-        + "public void writeToParcel(android.os.Parcel dest, int flags) {\n"
-        + "  dest.writeValue(bar());\n"
-        + "  dest.writeValue(baz());\n"
-        + "}\n");
-  }
-
-  @Test public void generatesDescribeContents() throws Exception {
-    MethodSpec describeContents = extension.generateDescribeContents();
-    assertThat(describeContents.toString()).isEqualTo(""
-        + "@java.lang.Override\n"
-        + "public int describeContents() {\n"
-        + "  return 0;\n"
-        + "}\n");
-  }
-
 
   private AutoValueExtension.Context createContext(TypeElement type) {
     String packageName = MoreElements.getPackage(type).getQualifiedName().toString();
