@@ -1,4 +1,4 @@
-package com.ryanharter.autoparcel.util;
+package com.ryanharter.auto.value.parcel.util;
 
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;

@@ -1,4 +1,4 @@
-package com.ryanharter.autoparcel;
+package com.ryanharter.auto.value.parcel;
 
 import com.google.auto.common.MoreTypes;
 import com.google.auto.value.AutoValueExtension;
@@ -26,7 +26,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 import java.util.*;
 
-public class AutoParcelExtension implements AutoValueExtension {
+public class AutoValueParcelExtension implements AutoValueExtension {
 
   Messager getMessager(Context context) {
     return context.processingEnvironment().getMessager();
@@ -98,7 +98,7 @@ public class AutoParcelExtension implements AutoValueExtension {
           !TypeSimplifier.isClassOfType(env.getTypeUtils(), serializable, type)) {
         env.getMessager().printMessage(Diagnostic.Kind.ERROR, "AutoValue property " +
             name.getSimpleName() + " is not primitive, Parcelable, or Serializable.", name);
-        throw new AutoParcelException();
+        throw new AutoValueParcelException();
       }
     }
   }
@@ -223,7 +223,6 @@ public class AutoParcelExtension implements AutoValueExtension {
     for (TypeMirror iface : typeElement.getInterfaces()) {
       String typeName = context.processingEnvironment().getTypeUtils().asElement(iface)
           .getSimpleName().toString();
-      getMessager(context).printMessage(Diagnostic.Kind.NOTE, "Checking type: " + typeName);
       if (typeName.equals("android.os.Parcelable")) {
         return true;
       }

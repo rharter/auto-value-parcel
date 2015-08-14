@@ -1,4 +1,4 @@
-# AutoParcel
+# AutoValue: Parcel Extension
 
 [![Build Status](https://travis-ci.org/rharter/auto-parcel.svg?branch=master)](https://travis-ci.org/rharter/auto-parcel)
 

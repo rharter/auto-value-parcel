@@ -1,4 +1,4 @@
-package com.ryanharter.autoparcel;
+package com.ryanharter.auto.value.parcel;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;

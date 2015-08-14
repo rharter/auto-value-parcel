@@ -1,12 +1,12 @@
-package com.ryanharter.autoparcel;
+package com.ryanharter.auto.value.parcel;
 
 import android.os.Parcelable;
 import com.google.auto.common.MoreElements;
 import com.google.auto.value.AutoValueExtension;
 import com.google.common.collect.ImmutableSet;
 import com.google.testing.compile.CompilationRule;
-import com.ryanharter.autoparcel.util.TestMessager;
-import com.ryanharter.autoparcel.util.TestProcessingEnvironment;
+import com.ryanharter.auto.value.parcel.util.TestMessager;
+import com.ryanharter.auto.value.parcel.util.TestProcessingEnvironment;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
@@ -32,11 +32,11 @@ import org.junit.Test;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
-public class AutoParcelExtensionTest {
+public class AutoValueParcelExtensionTest {
 
   public @Rule CompilationRule rule = new CompilationRule();
 
-  AutoParcelExtension extension = new AutoParcelExtension();
+  AutoValueParcelExtension extension = new AutoValueParcelExtension();
 
   private Elements elements;
   private Types types;
@@ -56,7 +56,7 @@ public class AutoParcelExtensionTest {
     try {
       extension.generateClass(context, "Test_AnnotatedType", "SampleTypeWithNonSerializable", true);
       fail();
-    } catch (AutoParcelException e) {}
+    } catch (AutoValueParcelException e) {}
   }
 
   @Test public void acceptsParcelableProperties() throws Exception {
