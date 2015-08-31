@@ -103,7 +103,7 @@ public class AutoValueParcelExtensionTest {
         + "import java.lang.String;\n"
         + "final class AutoValue_Test extends $AutoValue_Test {\n"
         + "  private static final ClassLoader CL = AutoValue_Test.class.getClassLoader();\n"
-        + "  private static final Parcelable.Creator<AutoValue_Test> CREATOR = new android.os.Parcelable.Creator<AutoValue_Test>() {\n"
+        + "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = new android.os.Parcelable.Creator<AutoValue_Test>() {\n"
         + "    @java.lang.Override\n"
         + "    public AutoValue_Test createFromParcel(android.os.Parcel in) {\n"
         + "      return new AutoValue_Test(in);\n"

@@ -182,7 +182,7 @@ public class AutoValueParcelExtension implements AutoValueExtension {
         .build();
 
     return FieldSpec
-        .builder(creatorOfClass, "CREATOR", Modifier.PRIVATE,
+        .builder(creatorOfClass, "CREATOR", Modifier.PUBLIC,
             Modifier.FINAL, Modifier.STATIC)
         .initializer(creatorImpl.toString())
         .build();
