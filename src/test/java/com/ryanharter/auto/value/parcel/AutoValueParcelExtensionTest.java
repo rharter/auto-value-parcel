@@ -1,6 +1,7 @@
 package com.ryanharter.auto.value.parcel;
 
 import android.os.Parcelable;
+
 import com.google.auto.common.MoreElements;
 import com.google.auto.value.AutoValueExtension;
 import com.google.auto.value.processor.AutoValueProcessor;
@@ -9,17 +10,16 @@ import com.google.testing.compile.CompilationRule;
 import com.google.testing.compile.JavaFileObjects;
 import com.ryanharter.auto.value.parcel.util.TestMessager;
 import com.ryanharter.auto.value.parcel.util.TestProcessingEnvironment;
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.FieldSpec;
-import com.squareup.javapoet.JavaFile;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.TypeName;
+
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
@@ -27,12 +27,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.Elements;
-import javax.lang.model.util.Types;
-
 import javax.tools.JavaFileObject;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
 
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.common.truth.Truth.assertThat;
@@ -46,7 +41,6 @@ public class AutoValueParcelExtensionTest {
   AutoValueParcelExtension extension = new AutoValueParcelExtension();
 
   private Elements elements;
-  private Types types;
   private ProcessingEnvironment processingEnvironment;
 
   private JavaFileObject parcelable;
@@ -55,8 +49,7 @@ public class AutoValueParcelExtensionTest {
   @Before public void setup() {
     Messager messager = new TestMessager();
     elements = rule.getElements();
-    types = rule.getTypes();
-    processingEnvironment = new TestProcessingEnvironment(messager, elements, types);
+    processingEnvironment = new TestProcessingEnvironment(messager, elements, rule.getTypes());
 
     parcelable = JavaFileObjects.forSourceString("android.os.Parcelable", ""
         + "package android.os;\n"
