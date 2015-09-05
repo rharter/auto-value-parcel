@@ -1,16 +1,13 @@
 package com.ryanharter.auto.value.parcel.util;
 
+import java.io.PrintStream;
+
 import javax.annotation.processing.Messager;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.tools.Diagnostic;
-import java.io.PrintStream;
-import java.io.PrintWriter;
 
-/**
- * Created by rharter on 8/12/15.
- */
 public final class TestMessager implements Messager {
 
   @Override
