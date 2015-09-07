@@ -1,8 +1,6 @@
 package com.ryanharter.auto.value.parcel;
 
-import com.google.auto.common.MoreTypes;
 import com.google.auto.value.AutoValueExtension;
-
 import com.google.common.collect.Lists;
 import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
@@ -16,21 +14,18 @@ import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
 
 import java.io.Serializable;
-import javax.annotation.processing.Messager;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
-import java.util.*;
 
 public class AutoValueParcelExtension implements AutoValueExtension {
-
-  Messager getMessager(Context context) {
-    return context.processingEnvironment().getMessager();
-  }
 
   @Override
   public boolean applicable(Context context) {
@@ -69,7 +64,7 @@ public class AutoValueParcelExtension implements AutoValueExtension {
     MethodSpec parcelConstructor = generateParcelConstructor(types, classLoader);
     MethodSpec writeToParcel = generateWriteToParcel(types);
     MethodSpec describeContents = generateDescribeContents();
-    FieldSpec creator = generateCreator(className, classLoader);
+    FieldSpec creator = generateCreator(className);
 
     TypeSpec subclass = TypeSpec.classBuilder(className)
         .addModifiers(Modifier.FINAL)
@@ -150,7 +145,7 @@ public class AutoValueParcelExtension implements AutoValueExtension {
 
     StringBuilder superFormat = new StringBuilder("this(");
     for (int i = args.size(); i > 0; i--) {
-      superFormat.append("($T) in.readValue(" + classLoader.name + ")");
+      superFormat.append("($T) in.readValue(").append(classLoader.name).append(")");
       if (i > 1) superFormat.append(", ");
     }
     superFormat.append(")");
@@ -158,7 +153,7 @@ public class AutoValueParcelExtension implements AutoValueExtension {
     return builder.build();
   }
 
-  FieldSpec generateCreator(String cls, FieldSpec classLoader) {
+  FieldSpec generateCreator(String cls) {
     ClassName className = ClassName.bestGuess(cls);
     ClassName creator = ClassName.bestGuess("android.os.Parcelable.Creator");
     TypeName creatorOfClass = ParameterizedTypeName.get(creator, className);
@@ -209,56 +204,5 @@ public class AutoValueParcelExtension implements AutoValueExtension {
         .returns(int.class)
         .addStatement("return 0")
         .build();
-  }
-
-  private boolean isParcelableType(Context context, ExecutableElement prop) {
-    if (primitive(prop))
-      return true;
-
-    // special case for strings
-    if (getCastType(prop).equals("java.lang.String"))
-      return true;
-
-    TypeElement typeElement = MoreTypes.asTypeElement(prop.getReturnType());
-    for (TypeMirror iface : typeElement.getInterfaces()) {
-      String typeName = context.processingEnvironment().getTypeUtils().asElement(iface)
-          .getSimpleName().toString();
-      if (typeName.equals("android.os.Parcelable")) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  public String getCastType(ExecutableElement prop) {
-    return primitive(prop) ? box(prop.getReturnType().getKind()) : prop.getReturnType().toString();
-  }
-
-  private String box(TypeKind kind) {
-    switch (kind) {
-      case BOOLEAN:
-        return "Boolean";
-      case BYTE:
-        return "Byte";
-      case SHORT:
-        return "Short";
-      case INT:
-        return "Integer";
-      case LONG:
-        return "Long";
-      case CHAR:
-        return "Character";
-      case FLOAT:
-        return "Float";
-      case DOUBLE:
-        return "Double";
-      default:
-        throw new RuntimeException("Unknown primitive of kind " + kind);
-    }
-  }
-
-  public boolean primitive(ExecutableElement el) {
-    return el.getReturnType().getKind().isPrimitive();
   }
 }
