@@ -3,6 +3,9 @@ import org.gradle.internal.jvm.Jvm
 apply plugin: 'java'
 apply plugin: 'maven-publish'
 
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
 group = GROUP
 version = VERSION_NAME
 def artifact = POM_ARTIFACT_ID
