@@ -1,7 +1,6 @@
 package com.ryanharter.auto.value.parcel;
 
 import android.os.Parcelable;
-
 import com.google.auto.common.MoreElements;
 import com.google.auto.value.AutoValueExtension;
 import com.google.auto.value.processor.AutoValueProcessor;
@@ -10,15 +9,9 @@ import com.google.testing.compile.CompilationRule;
 import com.google.testing.compile.JavaFileObjects;
 import com.ryanharter.auto.value.parcel.util.TestMessager;
 import com.ryanharter.auto.value.parcel.util.TestProcessingEnvironment;
-
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
 
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -28,6 +21,10 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.Elements;
 import javax.tools.JavaFileObject;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.common.truth.Truth.assertThat;
@@ -36,7 +33,7 @@ import static org.junit.Assert.fail;
 
 public class AutoValueParcelExtensionTest {
 
-  public @Rule CompilationRule rule = new CompilationRule();
+  @Rule public CompilationRule rule = new CompilationRule();
 
   AutoValueParcelExtension extension = new AutoValueParcelExtension();
 
@@ -71,18 +68,18 @@ public class AutoValueParcelExtensionTest {
 
   @Test public void simple() {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", ""
-            + "package test;\n"
-            + "import android.os.Parcelable;\n"
-            + "import com.google.auto.value.AutoValue;\n"
-            + "@AutoValue public abstract class Test implements Parcelable {\n"
-            + "public abstract int a();\n"
-            + "public abstract Double b();\n"
-            + "public abstract String c();\n"
-            // TODO get rid of this soon!
-            + "public int describeContents() {\n"
-            + "return 0;\n"
-            + "}"
-            + "}"
+        + "package test;\n"
+        + "import android.os.Parcelable;\n"
+        + "import com.google.auto.value.AutoValue;\n"
+        + "@AutoValue public abstract class Test implements Parcelable {\n"
+        + "public abstract int a();\n"
+        + "public abstract Double b();\n"
+        + "public abstract String c();\n"
+        // TODO get rid of this soon!
+        + "public int describeContents() {\n"
+        + "return 0;\n"
+        + "}"
+        + "}"
     );
 
     JavaFileObject expected = JavaFileObjects.forSourceString("test/AutoValue_Test", ""
@@ -126,6 +123,76 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
         .that(Arrays.asList(parcel, parcelable, source))
+        .processedWith(new AutoValueProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
+  @Test public void handlesParcelableCollectionTypes() {
+    JavaFileObject parcelable1 = JavaFileObjects.forSourceString("test.Parcelable1", ""
+        + "package test;\n"
+        + "import android.os.Parcelable;\n"
+        + "import android.os.Parcel;\n"
+        + "public class Parcelable1 implements Parcelable {\n"
+        + "  public int describeContents() {"
+        + "    return 0;"
+        + "  }\n"
+        + "  public void writeToParcel(Parcel in, int flags) {"
+        + "  }\n"
+        + "}");
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Test", ""
+        + "package test;\n"
+        + "import android.os.Parcelable;\n"
+        + "import com.google.auto.value.AutoValue;\n"
+        + "import java.util.List;\n"
+        + "@AutoValue public abstract class Test implements Parcelable {\n"
+            + "public abstract List<Parcelable1> a();\n"
+            + "public abstract int[] b();\n"
+        + "public int describeContents() {\n"
+        + "return 0;\n"
+        + "}\n"
+        + "}"
+    );
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test/AutoValue_Test", ""
+        + "package test;\n"
+        + "import android.os.Parcel;\n"
+        + "import android.os.Parcelable;\n"
+        + "import java.lang.ClassLoader;\n"
+        + "import java.lang.Override;"
+        + "import java.util.List;\n"
+        + "final class AutoValue_Test extends $AutoValue_Test {\n"
+        + "  private static final ClassLoader CL = AutoValue_Test.class.getClassLoader();\n"
+        + "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = new android.os.Parcelable.Creator<AutoValue_Test>() {\n"
+        + "    @java.lang.Override\n"
+        + "    public AutoValue_Test createFromParcel(android.os.Parcel in) {\n"
+        + "      return new AutoValue_Test(in);\n"
+        + "    }\n"
+        + "    @java.lang.Override\n"
+        + "    public AutoValue_Test[] newArray(int size) {\n"
+        + "      return new AutoValue_Test[size];\n"
+        + "    }\n"
+        + "  };\n"
+        + "  AutoValue_Test(List<Parcelable1> a, int[] b) {\n"
+        + "    super(a, b);\n"
+        + "  }\n"
+        + "  private AutoValue_Test(Parcel in) {\n"
+        + "    this((List<Parcelable1>) in.readValue(CL), (int[]) in.readValue(CL));\n"
+        + "  }\n"
+        + "  @Override\n"
+        + "  public void writeToParcel(Parcel dest, int flags) {\n"
+        + "    dest.writeValue(a());\n"
+        + "    dest.writeValue(b());"
+        + "  }\n"
+        + "  @Override\n"
+        + "  public int describeContents() {\n"
+        + "    return 0;\n"
+        + "  }\n"
+        + "}");
+
+    assertAbout(javaSources())
+        .that(Arrays.asList(parcel, parcelable, parcelable1, source))
         .processedWith(new AutoValueProcessor())
         .compilesWithoutError()
         .and()
@@ -215,7 +282,7 @@ public class AutoValueParcelExtensionTest {
     ImmutableSet.Builder<ExecutableElement> toImplement = ImmutableSet.builder();
     for (ExecutableElement method : methods) {
       if (method.getModifiers().contains(Modifier.ABSTRACT)
-          && !Arrays.asList("toString", "hashCode", "equals").contains(method.getSimpleName())) {
+          && !Arrays.asList("toString", "hashCode", "equals").contains(method.getSimpleName().toString())) {
         if (method.getParameters().isEmpty() && method.getReturnType().getKind() != TypeKind.VOID) {
           toImplement.add(method);
         }

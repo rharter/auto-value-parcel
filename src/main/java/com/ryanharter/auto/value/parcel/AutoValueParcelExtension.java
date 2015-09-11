@@ -12,17 +12,20 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 
 public class AutoValueParcelExtension implements AutoValueExtension {
@@ -83,11 +86,28 @@ public class AutoValueParcelExtension implements AutoValueExtension {
 
   private void validateProperties(ProcessingEnvironment env,
                                   Map<String, ExecutableElement> properties) {
+    Types typeUtils = env.getTypeUtils();
+    Elements elementUtils = env.getElementUtils();
+    TypeMirror list = typeUtils.getDeclaredType(
+        elementUtils.getTypeElement(List.class.getName()),
+        typeUtils.getWildcardType(null, null)
+    );
     TypeMirror parcelable = env.getElementUtils().getTypeElement("android.os.Parcelable").asType();
     TypeMirror serializable = TypeSimplifier.typeFromClass(env.getTypeUtils(),
         env.getElementUtils(), Serializable.class);
     for (ExecutableElement name : properties.values()) {
       TypeMirror type = name.getReturnType();
+      if (type.getKind() == TypeKind.DECLARED && typeUtils.isSubtype(type, list)) {
+        DeclaredType dType = (DeclaredType) type;
+        List<? extends TypeMirror> types = dType.getTypeArguments();
+        if (!types.isEmpty()) {
+          type = types.get(0);
+        }
+      } else if (type.getKind() == TypeKind.ARRAY) {
+        ArrayType aType = (ArrayType) type;
+        type = aType.getComponentType();
+      }
+
       if (!TypeName.get(type).isPrimitive() &&
           !TypeSimplifier.isClassOfType(env.getTypeUtils(), parcelable, type) &&
           !TypeSimplifier.isClassOfType(env.getTypeUtils(), serializable, type)) {
