@@ -1,6 +1,6 @@
 package com.ryanharter.auto.value.parcel;
 
-import com.google.auto.value.AutoValueExtension;
+import com.google.auto.value.extension.AutoValueExtension;
 import com.google.common.collect.Lists;
 import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
@@ -12,11 +12,13 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
