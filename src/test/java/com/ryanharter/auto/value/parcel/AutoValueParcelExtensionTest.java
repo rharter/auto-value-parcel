@@ -2,7 +2,7 @@ package com.ryanharter.auto.value.parcel;
 
 import android.os.Parcelable;
 import com.google.auto.common.MoreElements;
-import com.google.auto.value.AutoValueExtension;
+import com.google.auto.value.extension.AutoValueExtension;
 import com.google.auto.value.processor.AutoValueProcessor;
 import com.google.common.collect.ImmutableSet;
 import com.google.testing.compile.CompilationRule;
