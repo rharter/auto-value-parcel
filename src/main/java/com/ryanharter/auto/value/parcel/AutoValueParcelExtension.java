@@ -1,5 +1,6 @@
 package com.ryanharter.auto.value.parcel;
 
+import com.google.auto.service.AutoService;
 import com.google.auto.value.extension.AutoValueExtension;
 import com.google.common.collect.Lists;
 import com.squareup.javapoet.ArrayTypeName;
@@ -30,6 +31,7 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 
+@AutoService(AutoValueExtension.class)
 public class AutoValueParcelExtension implements AutoValueExtension {
 
   @Override
