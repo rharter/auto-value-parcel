@@ -29,8 +29,10 @@ Now build your project and enjoy your Parcelable Foo.
 Add a Gradle dependency:
 
 ```groovy
-compile 'com.ryanharter.auto.value:auto-value-parcel:0.2-SNAPSHOT'
+apt 'com.ryanharter.auto.value:auto-value-parcel:0.2-SNAPSHOT'
 ```
+
+(Using the [android-apt](https://bitbucket.org/hvisser/android-apt) plugin)
 
 ## License
 
