@@ -32,7 +32,7 @@ import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 
 @AutoService(AutoValueExtension.class)
-public class AutoValueParcelExtension implements AutoValueExtension {
+public class AutoValueParcelExtension extends AutoValueExtension {
 
   @Override
   public boolean applicable(Context context) {
@@ -44,7 +44,7 @@ public class AutoValueParcelExtension implements AutoValueExtension {
   }
 
   @Override
-  public boolean mustBeAtEnd(Context context) {
+  public boolean mustBeFinal(Context context) {
     return true;
   }
 
