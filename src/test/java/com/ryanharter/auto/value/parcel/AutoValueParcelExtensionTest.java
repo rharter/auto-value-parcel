@@ -42,6 +42,7 @@ public class AutoValueParcelExtensionTest {
 
   private JavaFileObject parcelable;
   private JavaFileObject parcel;
+  private JavaFileObject nullable;
 
   @Before public void setup() {
     Messager messager = new TestMessager();
@@ -64,6 +65,18 @@ public class AutoValueParcelExtensionTest {
         + "Object readValue(ClassLoader cl);\n"
         + "void writeValue(Object o);\n"
         + "}");
+    nullable = JavaFileObjects.forSourceString("com.ryanharter.auto.value.moshi.Nullable", ""
+        + "package test;\n"
+        + "import java.lang.annotation.Retention;\n"
+        + "import java.lang.annotation.Target;\n"
+        + "import static java.lang.annotation.ElementType.METHOD;\n"
+        + "import static java.lang.annotation.ElementType.PARAMETER;\n"
+        + "import static java.lang.annotation.ElementType.FIELD;\n"
+        + "import static java.lang.annotation.RetentionPolicy.SOURCE;\n"
+        + "@Retention(SOURCE)\n"
+        + "@Target({METHOD, PARAMETER, FIELD})\n"
+        + "public @interface Nullable {\n"
+        + "}");
   }
 
   @Test public void simple() {
@@ -73,8 +86,9 @@ public class AutoValueParcelExtensionTest {
         + "import com.google.auto.value.AutoValue;\n"
         + "@AutoValue public abstract class Test implements Parcelable {\n"
         + "public abstract int a();\n"
-        + "public abstract Double b();\n"
+        + "@Nullable public abstract Double b();\n"
         + "public abstract String c();\n"
+        + "public abstract long d();\n"
         + "}"
     );
 
@@ -99,17 +113,18 @@ public class AutoValueParcelExtensionTest {
         + "      return new AutoValue_Test[size];\n"
         + "    }\n"
         + "  };\n"
-        + "  AutoValue_Test(int a, Double b, String c) {\n"
-        + "    super(a, b, c);\n"
+        + "  AutoValue_Test(int a, Double b, String c, long d) {\n"
+        + "    super(a, b, c, d);\n"
         + "  }\n"
         + "  private AutoValue_Test(Parcel in) {\n"
-        + "    this((Integer) in.readValue(CL), (Double) in.readValue(CL), (String) in.readValue(CL));\n"
+        + "    this(in.readInt(), (Double) in.readValue(CL), in.readString(), in.readLong());\n"
         + "  }\n"
         + "  @Override\n"
         + "  public void writeToParcel(Parcel dest, int flags) {\n"
-        + "    dest.writeValue(a());\n"
+        + "    dest.writeInt(a());\n"
         + "    dest.writeValue(b());\n"
-        + "    dest.writeValue(c());\n"
+        + "    dest.writeString(c());\n"
+        + "    dest.writeLong(d());"
         + "  }\n"
         + "  @Override\n"
         + "  public int describeContents() {\n"
@@ -118,7 +133,7 @@ public class AutoValueParcelExtensionTest {
         + "}");
 
     assertAbout(javaSources())
-        .that(Arrays.asList(parcel, parcelable, source))
+        .that(Arrays.asList(parcel, parcelable, nullable, source))
         .processedWith(new AutoValueProcessor())
         .compilesWithoutError()
         .and()
