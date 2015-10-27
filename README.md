@@ -14,11 +14,7 @@ Simply include AutoParcel in your project and make any of your `@AutoValue` anno
 @AutoValue public abstract class Foo implements Parcelable {
 
   public abstract String bar();
-  
-  // needed workaround for now. 
-  @Override public int describeContents() {
-    return 0;
-  }
+
 }
 ```
 

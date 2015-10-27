@@ -75,10 +75,6 @@ public class AutoValueParcelExtensionTest {
         + "public abstract int a();\n"
         + "public abstract Double b();\n"
         + "public abstract String c();\n"
-        // TODO get rid of this soon!
-        + "public int describeContents() {\n"
-        + "return 0;\n"
-        + "}"
         + "}"
     );
 

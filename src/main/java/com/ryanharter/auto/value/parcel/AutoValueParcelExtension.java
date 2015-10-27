@@ -3,6 +3,7 @@ package com.ryanharter.auto.value.parcel;
 import com.google.auto.service.AutoService;
 import com.google.auto.value.extension.AutoValueExtension;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
@@ -20,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import java.util.Set;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -41,6 +43,11 @@ public class AutoValueParcelExtension extends AutoValueExtension {
     TypeMirror autoValueClass = context.autoValueClass().asType();
     return TypeSimplifier.isClassOfType(context.processingEnvironment().getTypeUtils(), parcelable,
         autoValueClass);
+  }
+
+  @Override
+  public Set<String> consumeProperties(Context context) {
+    return Sets.newHashSet("describeContents", "writeToParcel");
   }
 
   @Override
