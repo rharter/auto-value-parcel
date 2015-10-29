@@ -6,10 +6,6 @@ apply plugin: 'maven-publish'
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
-group = GROUP
-version = VERSION_NAME
-def artifact = POM_ARTIFACT_ID
-
 repositories {
     maven {
         url 'http://oss.sonatype.org/content/repositories/snapshots'
@@ -31,45 +27,4 @@ dependencies {
     testCompile files(Jvm.current().getToolsJar())
 }
 
-def isReleaseBuild() {
-    return version.contains("SNAPSHOT") == false
-}
-
-def getReleaseRepositoryUrl() {
-    return hasProperty('RELEASE_REPOSITORY_URL') ? RELEASE_REPOSITORY_URL
-            : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-}
-
-def getSnapshotRepositoryUrl() {
-    return hasProperty('SNAPSHOT_REPOSITORY_URL') ? SNAPSHOT_REPOSITORY_URL
-            : "https://oss.sonatype.org/content/repositories/snapshots/"
-}
-
-def getRepositoryUsername() {
-    return hasProperty('SONATYPE_NEXUS_USERNAME') ? SONATYPE_NEXUS_USERNAME : ""
-}
-
-def getRepositoryPassword() {
-    return hasProperty('SONATYPE_NEXUS_PASSWORD') ? SONATYPE_NEXUS_PASSWORD : ""
-}
-
-publishing {
-    publications {
-        processor(MavenPublication) {
-            groupId project.group
-            artifactId artifact
-            version project.version
-
-            from components.java
-        }
-    }
-    repositories {
-        maven {
-            url isReleaseBuild() ? getReleaseRepositoryUrl() : getSnapshotRepositoryUrl()
-            credentials() {
-                username getRepositoryUsername()
-                password getRepositoryPassword()
-            }
-        }
-    }
-}
+apply from: rootProject.file('gradle/gradle-mvn-push.gradle')

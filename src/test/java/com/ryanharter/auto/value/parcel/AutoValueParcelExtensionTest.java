@@ -125,6 +125,30 @@ public class AutoValueParcelExtensionTest {
         .generatesSources(expected);
   }
 
+  @Test public void builder() {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Test", ""
+        + "package test;\n"
+        + "import android.os.Parcelable;\n"
+        + "import com.google.auto.value.AutoValue;\n"
+        + "@AutoValue public abstract class Test implements Parcelable {\n"
+        + "public abstract int a();\n"
+        + "public abstract Double b();\n"
+        + "public abstract String c();\n"
+        + "@AutoValue.Builder public static abstract class Builder {\n"
+        + "  public abstract Builder a(int a);\n"
+        + "  public abstract Builder b(Double b);\n"
+        + "  public abstract Builder c(String c);\n"
+        + "  public abstract Test build();\n"
+        + "}\n"
+        + "}"
+    );
+
+    assertAbout(javaSources())
+        .that(Arrays.asList(parcel, parcelable, source))
+        .processedWith(new AutoValueProcessor())
+        .compilesWithoutError();
+  }
+
   @Test public void handlesParcelableCollectionTypes() {
     JavaFileObject parcelable1 = JavaFileObjects.forSourceString("test.Parcelable1", ""
         + "package test;\n"
