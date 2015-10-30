@@ -31,6 +31,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
@@ -104,8 +105,9 @@ public class AutoValueParcelExtension extends AutoValueExtension {
         .build();
 
     MethodSpec constructor = generateConstructor(properties);
-    MethodSpec parcelConstructor = generateParcelConstructor(types, classLoader);
-    MethodSpec writeToParcel = generateWriteToParcel(types);
+    MethodSpec parcelConstructor = generateParcelConstructor(context.processingEnvironment(),
+        properties, classLoader);
+    MethodSpec writeToParcel = generateWriteToParcel(context.processingEnvironment(), properties);
     MethodSpec describeContents = generateDescribeContents();
     FieldSpec creator = generateCreator(className);
 
@@ -132,35 +134,19 @@ public class AutoValueParcelExtension extends AutoValueExtension {
     return values;
   }
 
-  private void validateProperties(ProcessingEnvironment env,
-                                  List<Property> properties) {
+  private void validateProperties(ProcessingEnvironment env, List<Property> properties) {
     Types typeUtils = env.getTypeUtils();
-    Elements elementUtils = env.getElementUtils();
-    TypeMirror list = typeUtils.getDeclaredType(
-        elementUtils.getTypeElement(List.class.getName()),
-        typeUtils.getWildcardType(null, null)
-    );
-    TypeMirror parcelable = env.getElementUtils().getTypeElement("android.os.Parcelable").asType();
-    TypeMirror serializable = TypeSimplifier.typeFromClass(env.getTypeUtils(),
-        env.getElementUtils(), Serializable.class);
     for (Property property : properties) {
       TypeMirror type = property.element.getReturnType();
-      if (type.getKind() == TypeKind.DECLARED && typeUtils.isSubtype(type, list)) {
-        DeclaredType dType = (DeclaredType) type;
-        List<? extends TypeMirror> types = dType.getTypeArguments();
-        if (!types.isEmpty()) {
-          type = types.get(0);
-        }
-      } else if (type.getKind() == TypeKind.ARRAY) {
+      if (type.getKind() == TypeKind.ARRAY) {
         ArrayType aType = (ArrayType) type;
         type = aType.getComponentType();
       }
-
-      if (!TypeName.get(type).isPrimitive() &&
-          !TypeSimplifier.isClassOfType(env.getTypeUtils(), parcelable, type) &&
-          !TypeSimplifier.isClassOfType(env.getTypeUtils(), serializable, type)) {
+      TypeElement element = (TypeElement) typeUtils.asElement(type);
+      if ((element == null || !Parcelables.isValidType(typeUtils, element)) &&
+          !Parcelables.isValidType(TypeName.get(type))){
         env.getMessager().printMessage(Diagnostic.Kind.ERROR, "AutoValue property " +
-            property.name + " is not primitive, Parcelable, or Serializable.", property.element);
+            property.name + " is not a supported Parcelable type.", property.element);
         throw new AutoValueParcelException();
       }
     }
@@ -180,7 +166,7 @@ public class AutoValueParcelExtension extends AutoValueExtension {
   }
 
   MethodSpec generateConstructor(List<Property> properties) {
-    List<ParameterSpec> params = Lists.newArrayList();
+    List<ParameterSpec> params = Lists.newArrayListWithCapacity(properties.size());
     for (Property property : properties) {
       params.add(ParameterSpec.builder(property.type, property.name).build());
     }
@@ -189,9 +175,9 @@ public class AutoValueParcelExtension extends AutoValueExtension {
         .addParameters(params);
 
     StringBuilder superFormat = new StringBuilder("super(");
-    List<TypeName> args = new LinkedList<TypeName>();
-    for (int i = 0, n = properties.size(); i < n; i++) {
-      args.add(properties.get(i).type);
+    List<ParameterSpec> args = new LinkedList<ParameterSpec>();
+    for (int i = 0, n = params.size(); i < n; i++) {
+      args.add(params.get(i));
       superFormat.append("$N");
       if (i < n - 1) superFormat.append(", ");
     }
@@ -201,22 +187,24 @@ public class AutoValueParcelExtension extends AutoValueExtension {
     return builder.build();
   }
 
-  MethodSpec generateParcelConstructor(List<Property> properties, FieldSpec classLoader) {
+  MethodSpec generateParcelConstructor(ProcessingEnvironment env, List<Property> properties,
+      FieldSpec classLoader) {
     ParameterSpec in = ParameterSpec.builder(ClassName.get("android.os", "Parcel"), "in").build();
     MethodSpec.Builder builder = MethodSpec.constructorBuilder()
         .addModifiers(Modifier.PRIVATE)
         .addParameter(in);
 
+    Types typeUtils = env.getTypeUtils();
     CodeBlock.Builder content = CodeBlock.builder();
     content.add("super(\n");
     content.indent();
     for (int i = 0, n = properties.size(); i < n; i++) {
-      content.add(Parcelables.readValue(properties.get(i), in, classLoader));
+      content.add(Parcelables.readValue(typeUtils, properties.get(i), in, classLoader));
       if (i < n - 1) content.add(",");
       content.add("\n");
     }
     content.unindent();
-    content.add(");");
+    content.add(");\n");
 
     return builder.addCode(content.build()).build();
   }
@@ -251,7 +239,7 @@ public class AutoValueParcelExtension extends AutoValueExtension {
         .build();
   }
 
-  MethodSpec generateWriteToParcel(List<Property> properties) {
+  MethodSpec generateWriteToParcel(ProcessingEnvironment env, List<Property> properties) {
     ParameterSpec dest = ParameterSpec
         .builder(ClassName.get("android.os", "Parcel"), "dest")
         .build();
@@ -261,8 +249,10 @@ public class AutoValueParcelExtension extends AutoValueExtension {
         .addParameter(dest)
         .addParameter(int.class, "flags");
 
+    Types typeUtils = env.getTypeUtils();
     for (Property p : properties) {
-      builder.addCode(Parcelables.writeValue(p, dest));
+      builder.addCode(Parcelables.writeValue(typeUtils, p, dest));
+      builder.addCode(";\n");
     }
 
     return builder.build();
