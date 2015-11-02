@@ -2,6 +2,7 @@ package com.ryanharter.auto.value.parcel;
 
 import com.google.auto.service.AutoService;
 import com.google.auto.value.extension.AutoValueExtension;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -41,9 +42,9 @@ import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 
 @AutoService(AutoValueExtension.class)
-public class AutoValueParcelExtension extends AutoValueExtension {
+public final class AutoValueParcelExtension extends AutoValueExtension {
 
-  public static final class Property {
+  static final class Property {
     String name;
     ExecutableElement element;
     TypeName type;
@@ -93,7 +94,7 @@ public class AutoValueParcelExtension extends AutoValueExtension {
   @Override
   public String generateClass(Context context, String className, String classToExtend,
                               boolean isFinal) {
-    List<Property> properties = readProperties(context.properties());
+    ImmutableList<Property> properties = readProperties(context.properties());
     validateProperties(context.processingEnvironment(), properties);
 
     TypeName type = ClassName.bestGuess(className);
@@ -126,12 +127,12 @@ public class AutoValueParcelExtension extends AutoValueExtension {
     return javaFile.toString();
   }
 
-  private List<Property> readProperties(Map<String, ExecutableElement> properties) {
-    List<Property> values = new LinkedList<Property>();
+  private ImmutableList<Property> readProperties(Map<String, ExecutableElement> properties) {
+    ImmutableList.Builder<Property> values = ImmutableList.builder();
     for (Map.Entry<String, ExecutableElement> entry : properties.entrySet()) {
       values.add(new Property(entry.getKey(), entry.getValue()));
     }
-    return values;
+    return values.build();
   }
 
   private void validateProperties(ProcessingEnvironment env, List<Property> properties) {
@@ -152,18 +153,7 @@ public class AutoValueParcelExtension extends AutoValueExtension {
     }
   }
 
-  private static final List<String> METHOD_EXCLUDES =
-      Arrays.asList("describeContents", "toBuilder");
-
-  private Map<String, TypeName> convertPropertiesToTypes(
-      Map<String, ExecutableElement> properties) {
-    Map<String, TypeName> types = new LinkedHashMap<String, TypeName>();
-    for (Map.Entry<String, ExecutableElement> entry : properties.entrySet()) {
-      if (METHOD_EXCLUDES.contains(entry.getKey())) continue;
-      types.put(entry.getKey(), TypeName.get(entry.getValue().getReturnType()));
-    }
-    return types;
-  }
+  private static final ImmutableSet<String> METHOD_EXCLUDES = ImmutableSet.of("describeContents");
 
   MethodSpec generateConstructor(List<Property> properties) {
     List<ParameterSpec> params = Lists.newArrayListWithCapacity(properties.size());
@@ -175,7 +165,7 @@ public class AutoValueParcelExtension extends AutoValueExtension {
         .addParameters(params);
 
     StringBuilder superFormat = new StringBuilder("super(");
-    List<ParameterSpec> args = new LinkedList<ParameterSpec>();
+    List<ParameterSpec> args = new ArrayList<ParameterSpec>();
     for (int i = 0, n = params.size(); i < n; i++) {
       args.add(params.get(i));
       superFormat.append("$N");
@@ -252,7 +242,6 @@ public class AutoValueParcelExtension extends AutoValueExtension {
     Types typeUtils = env.getTypeUtils();
     for (Property p : properties) {
       builder.addCode(Parcelables.writeValue(typeUtils, p, dest));
-      builder.addCode(";\n");
     }
 
     return builder.build();

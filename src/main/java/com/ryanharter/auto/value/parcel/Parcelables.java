@@ -1,5 +1,6 @@
 package com.ryanharter.auto.value.parcel;
 
+import com.google.common.collect.ImmutableSet;
 import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -10,6 +11,7 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.WildcardTypeName;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -18,7 +20,7 @@ import javax.lang.model.util.Types;
 /**
  * Created by rharter on 10/20/15.
  */
-public final class Parcelables {
+final class Parcelables {
 
   private static final TypeName STRING = ClassName.get("java.lang", "String");
   private static final TypeName MAP = ClassName.get("java.util", "Map");
@@ -42,7 +44,7 @@ public final class Parcelables {
   private static final TypeName SIZE = ClassName.get("android.util", "Size");
   private static final TypeName SIZEF = ClassName.get("android.util", "SizeF");
 
-  private static final List<TypeName> VALID_TYPES = Arrays.asList(STRING, MAP, LIST, BOOLEANARRAY,
+  private static final Set<TypeName> VALID_TYPES = ImmutableSet.of(STRING, MAP, LIST, BOOLEANARRAY,
       BYTEARRAY, INTARRAY, LONGARRAY, STRINGARRAY, SPARSEARRAY, SPARSEBOOLEANARRAY, BUNDLE,
       PARCELABLE, PARCELABLEARRAY, CHARSEQUENCE, CHARSEQUENCEARRAY, IBINDER, OBJECTARRAY,
       SERIALIZABLE, PERSISTABLEBUNDLE, SIZE, SIZEF);
@@ -69,13 +71,10 @@ public final class Parcelables {
       }
 
       // then check if it implements valid interfaces
-      List<? extends TypeMirror> interfaces = type.getInterfaces();
-      if (!interfaces.isEmpty()) {
-        for (TypeMirror iface : interfaces) {
-          TypeName ifaceName = TypeName.get(iface);
-          if (VALID_TYPES.contains(ifaceName)) {
-            return ifaceName;
-          }
+      for (TypeMirror iface : type.getInterfaces()) {
+        TypeName ifaceName = TypeName.get(iface);
+        if (VALID_TYPES.contains(ifaceName)) {
+          return ifaceName;
         }
       }
 
@@ -90,24 +89,28 @@ public final class Parcelables {
       FieldSpec classloader) {
     CodeBlock.Builder block = CodeBlock.builder();
 
+    if (property.nullable()){
+      block.add("$N.readInt() == 0 ? ", in);
+    }
+
     TypeElement element = (TypeElement) types.asElement(property.element.getReturnType());    
     final TypeName type = element != null ? getParcelableType(types, element) : property.type;
     if (type.equals(STRING))
       block.add("$N.readString()", in);
     else if (type.equals(TypeName.BYTE))
-      block.add(" $N.readByte()", in);
+      block.add("$N.readByte()", in);
     else if (type.equals(TypeName.INT))
-      block.add(" $N.readInt()", in);
+      block.add("$N.readInt()", in);
     else if (type.equals(TypeName.SHORT))
-      block.add(" (short) $N.readInt()", in);
+      block.add("(short) $N.readInt()", in);
     else if (type.equals(TypeName.LONG))
-      block.add(" $N.readLong()", in);
+      block.add("$N.readLong()", in);
     else if (type.equals(TypeName.FLOAT))
-      block.add(" $N.readFloat()", in);
+      block.add("$N.readFloat()", in);
     else if (type.equals(TypeName.DOUBLE))
-      block.add(" $N.readDouble()", in);
+      block.add("$N.readDouble()", in);
     else if (type.equals(TypeName.BOOLEAN))
-      block.add(" $N.readInt() == 1", in);
+      block.add("$N.readInt() == 1", in);
     else if (type.equals(PARCELABLE))
       block.add("($T) $N.readParcelable($N)", property.type, in, classloader);
     else if (type.equals(CHARSEQUENCE))
@@ -150,11 +153,23 @@ public final class Parcelables {
       block.add("$N.readSizeF()", in);
     else
       block.add("($T) $N.readValue($N)", property.type, in, classloader);
+
+    if (property.nullable()){
+      block.add(" : null");
+    }
+
     return block.build();
   }
 
   public static CodeBlock writeValue(Types types, AutoValueParcelExtension.Property property, ParameterSpec out) {
     CodeBlock.Builder block = CodeBlock.builder();
+
+    if (property.nullable()) {
+      block.beginControlFlow("if ($N() == null)", property.name);
+      block.addStatement("$N.writeInt(1)", out);
+      block.nextControlFlow("else");
+      block.addStatement("$N.writeInt(0)", out);
+    }
 
     TypeElement element = (TypeElement) types.asElement(property.element.getReturnType());
     final TypeName type = element != null ? getParcelableType(types, element) : property.type;
@@ -216,6 +231,13 @@ public final class Parcelables {
       block.add("$N.writeSizeF($N())", out, property.name);
     else
       block.add("$N.writeValue($N())", out, property.name);
+
+    block.add(";\n");
+
+    if (property.nullable()) {
+      block.endControlFlow();
+    }
+
     return block.build();
   }
 }

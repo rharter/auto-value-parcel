@@ -176,17 +176,22 @@ public class AutoValueParcelExtensionTest {
         "\n" +
         "  private AutoValue_Test(Parcel in) {\n" +
         "    super(\n" +
-        "       in.readInt(),\n" +
-        "      (Double) in.readSerializable(CL),\n" +
+        "      in.readInt(),\n" +
+        "      in.readInt() == 0 ? (Double) in.readSerializable(CL) : null,\n" +
         "      in.readString(),\n" +
-        "       in.readLong()\n" +
+        "      in.readLong()\n" +
         "    );\n" +
         "  }\n" +
         "\n" +
         "  @Override\n" +
         "  public void writeToParcel(Parcel dest, int flags) {\n" +
         "    dest.writeInt(a());\n" +
-        "    dest.writeSerializable(b());\n" +
+        "    if (b() == null) {\n" +
+        "      dest.writeInt(1);\n" +
+        "    } else {\n" +
+        "      dest.writeInt(0);\n" +
+        "      dest.writeSerializable(b());\n" +
+        "    }\n" +
         "    dest.writeString(c());\n" +
         "    dest.writeLong(d());\n" +
         "  }\n" +
@@ -343,7 +348,7 @@ public class AutoValueParcelExtensionTest {
         "import java.util.Map;\n" +
         "\n" +
         "@AutoValue public abstract class Foo implements Parcelable {\n" +
-        "  public abstract String a();\n" +
+        "  @Nullable public abstract String a();\n" +
         "  public abstract byte b();\n" +
         "  public abstract int c();\n" +
         "  public abstract short d();\n" +
@@ -366,7 +371,7 @@ public class AutoValueParcelExtensionTest {
         "  public abstract PersistableBundle z();\n" +
         "  public abstract Size aa();\n" +
         "  public abstract SizeF ab();\n" +
-        "  public abstract Parcelable1 ad();\n" +
+        "  @Nullable public abstract Parcelable1 ad();\n" +
         "  public abstract FooBinder ae();\n" +
         "}");
 
@@ -409,7 +414,7 @@ public class AutoValueParcelExtensionTest {
         "\n" +
         "  private AutoValue_Foo(Parcel in) {\n" +
         "    super(\n" +
-        "      in.readString(),\n" +
+        "      in.readInt() == 0 ? in.readString() : null,\n" +
         "      in.readByte(),\n" +
         "      in.readInt(),\n" +
         "      (short) in.readInt(),\n" +
@@ -432,13 +437,18 @@ public class AutoValueParcelExtensionTest {
         "      in.readPersistableBundle(CL),\n" +
         "      in.readSize(),\n" +
         "      in.readSizeF(),\n" +
-        "      (Parcelable1) in.readParcelable(CL),\n" +
+        "      in.readInt() == 0 ? (Parcelable1) in.readParcelable(CL) : null,\n" +
         "      (FooBinder) in.readStrongBinder()\n" +
         "    );}\n" +
         "\n" +
         "  @Override\n" +
         "  public void writeToParcel(Parcel dest, int flags) {\n" +
-        "    dest.writeString(a());\n" +
+        "    if (a() == null) {\n" +
+        "      dest.writeInt(1);\n" +
+        "    } else {\n" +
+        "      dest.writeInt(0);\n" +
+        "      dest.writeString(a());\n" +
+        "    }\n" +
         "    dest.writeInt(b());\n" +
         "    dest.writeInt(c());\n" +
         "    dest.writeInt(((Short) d()).intValue());\n" +
@@ -461,7 +471,12 @@ public class AutoValueParcelExtensionTest {
         "    dest.writePersistableBundle(z());\n" +
         "    dest.writeSize(aa());\n" +
         "    dest.writeSizeF(ab());\n" +
-        "    dest.writeParcelable(ad(), 0);\n" +
+        "    if (ad() == null) {\n" +
+        "      dest.writeInt(1);\n" +
+        "    } else {\n" +
+        "      dest.writeInt(0);\n" +
+        "      dest.writeParcelable(ad(), 0);\n" +
+        "    }\n" +
         "    dest.writeStrongBinder(ae());\n" +
         "  }\n" +
         "\n" +
@@ -472,7 +487,7 @@ public class AutoValueParcelExtensionTest {
         "}");
 
     assertAbout(javaSources())
-        .that(Arrays.asList(parcel, parcelable, parcelable1, foobinder, source))
+        .that(Arrays.asList(nullable, parcel, parcelable, parcelable1, foobinder, source))
         .processedWith(new AutoValueProcessor())
         .compilesWithoutError()
         .and()
