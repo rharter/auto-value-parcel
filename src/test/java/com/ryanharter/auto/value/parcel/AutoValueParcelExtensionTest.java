@@ -1,6 +1,7 @@
 package com.ryanharter.auto.value.parcel;
 
 import android.os.Parcelable;
+
 import com.google.auto.common.MoreElements;
 import com.google.auto.value.extension.AutoValueExtension;
 import com.google.auto.value.processor.AutoValueProcessor;
@@ -9,10 +10,15 @@ import com.google.testing.compile.CompilationRule;
 import com.google.testing.compile.JavaFileObjects;
 import com.ryanharter.auto.value.parcel.util.TestMessager;
 import com.ryanharter.auto.value.parcel.util.TestProcessingEnvironment;
-import com.squareup.javapoet.TypeName;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -22,10 +28,6 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.Elements;
 import javax.tools.JavaFileObject;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
 
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.common.truth.Truth.assertThat;
@@ -89,7 +91,7 @@ public class AutoValueParcelExtensionTest {
         "  int[] createIntArray();\n" +
         "  long[] createLongArray();\n" +
         "  String[] readStringArray();\n" +
-        "  Serializable readSerializable(ClassLoader cl);\n" +
+        "  Serializable readSerializable();\n" +
         "  SparseArray readSparseArray(ClassLoader cl);\n" +
         "  SparseBooleanArray readSparseBooleanArray();\n" +
         "  Bundle readBundle(ClassLoader cl);\n" +
@@ -177,7 +179,7 @@ public class AutoValueParcelExtensionTest {
         "  private AutoValue_Test(Parcel in) {\n" +
         "    super(\n" +
         "      in.readInt(),\n" +
-        "      in.readInt() == 0 ? (Double) in.readSerializable(CL) : null,\n" +
+        "      in.readInt() == 0 ? (Double) in.readSerializable() : null,\n" +
         "      in.readString(),\n" +
         "      in.readLong()\n" +
         "    );\n" +
@@ -373,6 +375,7 @@ public class AutoValueParcelExtensionTest {
         "  public abstract SizeF ab();\n" +
         "  @Nullable public abstract Parcelable1 ad();\n" +
         "  public abstract FooBinder ae();\n" +
+        "  @Nullable public abstract Boolean af();\n" +
         "}");
 
     JavaFileObject expected = JavaFileObjects.forSourceString("test/AutoValue_Foo", "" +
@@ -387,6 +390,7 @@ public class AutoValueParcelExtensionTest {
         "import android.util.SparseArray;\n" +
         "import android.util.SparseBooleanArray;\n" +
         "import java.io.Serializable;\n" +
+        "import java.lang.Boolean;\n" +
         "import java.lang.CharSequence;\n" +
         "import java.lang.ClassLoader;\n" +
         "import java.lang.Override;\n" +
@@ -408,8 +412,8 @@ public class AutoValueParcelExtensionTest {
         "    }\n" +
         "  };\n" +
         "\n" +
-        "  AutoValue_Foo(String a, byte b, int c, short d, long e, float f, double g, boolean h, Parcelable i, CharSequence j, Map<String, String> k, List<String> l, boolean[] m, byte[] n, int[] s, long[] t, Serializable u, SparseArray w, SparseBooleanArray x, Bundle y, PersistableBundle z, Size aa, SizeF ab, Parcelable1 ad, FooBinder ae) {\n" +
-        "    super(a, b, c, d, e, f, g, h, i, j, k, l, m, n, s, t, u, w, x, y, z, aa, ab, ad, ae);\n" +
+        "  AutoValue_Foo(String a, byte b, int c, short d, long e, float f, double g, boolean h, Parcelable i, CharSequence j, Map<String, String> k, List<String> l, boolean[] m, byte[] n, int[] s, long[] t, Serializable u, SparseArray w, SparseBooleanArray x, Bundle y, PersistableBundle z, Size aa, SizeF ab, Parcelable1 ad, FooBinder ae, Boolean af) {\n" +
+        "    super(a, b, c, d, e, f, g, h, i, j, k, l, m, n, s, t, u, w, x, y, z, aa, ab, ad, ae, af);\n" +
         "  }\n" +
         "\n" +
         "  private AutoValue_Foo(Parcel in) {\n" +
@@ -430,7 +434,7 @@ public class AutoValueParcelExtensionTest {
         "      in.createByteArray(),\n" +
         "      in.createIntArray(),\n" +
         "      in.createLongArray(),\n" +
-        "      (Serializable) in.readSerializable(CL),\n" +
+        "      (Serializable) in.readSerializable(),\n" +
         "      in.readSparseArray(CL),\n" +
         "      in.readSparseBooleanArray(),\n" +
         "      in.readBundle(CL),\n" +
@@ -438,7 +442,8 @@ public class AutoValueParcelExtensionTest {
         "      in.readSize(),\n" +
         "      in.readSizeF(),\n" +
         "      in.readInt() == 0 ? (Parcelable1) in.readParcelable(CL) : null,\n" +
-        "      (FooBinder) in.readStrongBinder()\n" +
+        "      (FooBinder) in.readStrongBinder(),\n" +
+        "      in.readInt() == 0 ? (Boolean) in.readSerializable() : null\n" +
         "    );}\n" +
         "\n" +
         "  @Override\n" +
@@ -478,6 +483,12 @@ public class AutoValueParcelExtensionTest {
         "      dest.writeParcelable(ad(), 0);\n" +
         "    }\n" +
         "    dest.writeStrongBinder(ae());\n" +
+        "    if (af() == null) {\n" +
+        "      dest.writeInt(1);\n" +
+        "    } else {\n" +
+        "      dest.writeInt(0);\n" +
+        "      dest.writeSerializable(af());\n" +
+        "    }\n" +
         "  }\n" +
         "\n" +
         "  @Override\n" +

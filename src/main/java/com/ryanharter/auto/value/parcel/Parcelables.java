@@ -8,10 +8,9 @@ import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
-import com.squareup.javapoet.WildcardTypeName;
-import java.util.Arrays;
-import java.util.List;
+
 import java.util.Set;
+
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -136,7 +135,7 @@ final class Parcelables {
     else if (type.equals(LONGARRAY))
       block.add("$N.createLongArray()", in);
     else if (type.equals(SERIALIZABLE))
-      block.add("($T) $N.readSerializable($N)", property.type, in, classloader);
+      block.add("($T) $N.readSerializable()", property.type, in);
     else if (type.equals(PARCELABLEARRAY))
       block.add("($T) $N.readParcelableArray($N)", property.type, in, classloader);
     else if (type.equals(SPARSEARRAY))
