@@ -4,13 +4,10 @@ import com.google.common.collect.ImmutableSet;
 import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
-import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
-
 import java.util.Set;
-
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -84,80 +81,91 @@ final class Parcelables {
     return null;
   }
 
-  public static CodeBlock readValue(Types types, AutoValueParcelExtension.Property property,
-      FieldSpec classloader) {
-    CodeBlock.Builder block = CodeBlock.builder();
-
+  /** Returns true if the code added to {@code block} requires a {@code ClassLoader cl} local. */
+  static boolean appendReadValue(CodeBlock.Builder block, AutoValueParcelExtension.Property property,
+      Types types) {
     if (property.nullable()){
       block.add("in.readInt() == 0 ? ");
     }
 
     TypeElement element = (TypeElement) types.asElement(property.element.getReturnType());
-    final TypeName type = element != null ? getParcelableType(types, element) : property.type;
-    if (type.equals(STRING))
+    TypeName type = element != null ? getParcelableType(types, element) : property.type;
+
+    boolean requiresClassLoader = false;
+    if (type.equals(STRING)) {
       block.add("in.readString()");
-    else if (type.equals(TypeName.BYTE))
+    } else if (type.equals(TypeName.BYTE)) {
       block.add("in.readByte()");
-    else if (type.equals(TypeName.INT))
+    } else if (type.equals(TypeName.INT)) {
       block.add("in.readInt()");
-    else if (type.equals(TypeName.SHORT))
+    } else if (type.equals(TypeName.SHORT)) {
       block.add("(short) in.readInt()");
-    else if (type.equals(TypeName.LONG))
+    } else if (type.equals(TypeName.LONG)) {
       block.add("in.readLong()");
-    else if (type.equals(TypeName.FLOAT))
+    } else if (type.equals(TypeName.FLOAT)) {
       block.add("in.readFloat()");
-    else if (type.equals(TypeName.DOUBLE))
+    } else if (type.equals(TypeName.DOUBLE)) {
       block.add("in.readDouble()");
-    else if (type.equals(TypeName.BOOLEAN))
+    } else if (type.equals(TypeName.BOOLEAN)) {
       block.add("in.readInt() == 1");
-    else if (type.equals(PARCELABLE))
-      block.add("($T) in.readParcelable($N)", property.type, classloader);
-    else if (type.equals(CHARSEQUENCE))
+    } else if (type.equals(PARCELABLE)) {
+      block.add("($T) in.readParcelable(cl)", property.type);
+      requiresClassLoader = true;
+    } else if (type.equals(CHARSEQUENCE)) {
       block.add("($T) in.readCharSequence()", property.type);
-    else if (type.equals(MAP))
-      block.add("($T) in.readHashMap($N)", property.type, classloader);
-    else if (type.equals(LIST))
-      block.add("($T) in.readArrayList($N)", property.type, classloader);
-    else if (type.equals(BOOLEANARRAY))
+    } else if (type.equals(MAP)) {
+      block.add("($T) in.readHashMap(cl)", property.type);
+      requiresClassLoader = true;
+    } else if (type.equals(LIST)) {
+      block.add("($T) in.readArrayList(cl)", property.type);
+      requiresClassLoader = true;
+    } else if (type.equals(BOOLEANARRAY)) {
       block.add("in.createBooleanArray()");
-    else if (type.equals(BYTEARRAY))
+    } else if (type.equals(BYTEARRAY)) {
       block.add("in.createByteArray()");
-    else if (type.equals(STRINGARRAY))
+    } else if (type.equals(STRINGARRAY)) {
       block.add("in.readStringArray()");
-    else if (type.equals(CHARSEQUENCEARRAY))
+    } else if (type.equals(CHARSEQUENCEARRAY)) {
       block.add("in.readCharSequenceArray()");
-    else if (type.equals(IBINDER))
+    } else if (type.equals(IBINDER)) {
       block.add("($T) in.readStrongBinder()", property.type);
-    else if (type.equals(OBJECTARRAY))
-      block.add("in.readArray($N)", classloader);
-    else if (type.equals(INTARRAY))
+    } else if (type.equals(OBJECTARRAY)) {
+      block.add("in.readArray(cl)");
+      requiresClassLoader = true;
+    } else if (type.equals(INTARRAY)) {
       block.add("in.createIntArray()");
-    else if (type.equals(LONGARRAY))
+    } else if (type.equals(LONGARRAY)) {
       block.add("in.createLongArray()");
-    else if (type.equals(SERIALIZABLE))
+    } else if (type.equals(SERIALIZABLE)) {
       block.add("($T) in.readSerializable()", property.type);
-    else if (type.equals(PARCELABLEARRAY))
-      block.add("($T) in.readParcelableArray($N)", property.type, classloader);
-    else if (type.equals(SPARSEARRAY))
-      block.add("in.readSparseArray($N)", classloader);
-    else if (type.equals(SPARSEBOOLEANARRAY))
+    } else if (type.equals(PARCELABLEARRAY)) {
+      block.add("($T) in.readParcelableArray(cl)", property.type);
+      requiresClassLoader = true;
+    } else if (type.equals(SPARSEARRAY)) {
+      block.add("in.readSparseArray(cl)");
+      requiresClassLoader = true;
+    } else if (type.equals(SPARSEBOOLEANARRAY)) {
       block.add("in.readSparseBooleanArray()");
-    else if (type.equals(BUNDLE))
-      block.add("in.readBundle($N)", classloader);
-    else if (type.equals(PERSISTABLEBUNDLE))
-      block.add("in.readPersistableBundle($N)", classloader);
-    else if (type.equals(SIZE))
+    } else if (type.equals(BUNDLE)) {
+      block.add("in.readBundle(cl)");
+      requiresClassLoader = true;
+    } else if (type.equals(PERSISTABLEBUNDLE)) {
+      block.add("in.readPersistableBundle(cl)");
+      requiresClassLoader = true;
+    } else if (type.equals(SIZE)) {
       block.add("in.readSize()");
-    else if (type.equals(SIZEF))
+    } else if (type.equals(SIZEF)) {
       block.add("in.readSizeF()");
-    else
-      block.add("($T) in.readValue($N)", property.type, classloader);
+    } else {
+      block.add("($T) in.readValue(cl)", property.type);
+      requiresClassLoader = true;
+    }
 
     if (property.nullable()){
       block.add(" : null");
     }
 
-    return block.build();
+    return requiresClassLoader;
   }
 
   public static CodeBlock writeValue(Types types, AutoValueParcelExtension.Property property, ParameterSpec out) {

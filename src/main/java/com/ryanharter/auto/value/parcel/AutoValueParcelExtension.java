@@ -88,22 +88,16 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
 
     TypeName type = ClassName.bestGuess(className);
 
-    FieldSpec classLoader = FieldSpec
-        .builder(ClassName.get(ClassLoader.class), "CL", Modifier.FINAL, Modifier.STATIC)
-        .initializer("$T.class.getClassLoader()", type)
-        .build();
-
     MethodSpec constructor = generateConstructor(properties);
     MethodSpec writeToParcel = generateWriteToParcel(context.processingEnvironment(), properties);
     MethodSpec describeContents = generateDescribeContents();
     FieldSpec creator =
-        generateCreator(context.processingEnvironment(), properties, type, classLoader);
+        generateCreator(context.processingEnvironment(), properties, type);
 
     TypeSpec subclass = TypeSpec.classBuilder(className)
         .addModifiers(Modifier.FINAL)
         .superclass(TypeVariableName.get(classToExtend))
         .addMethod(constructor)
-        .addField(classLoader)
         .addField(creator)
         .addMethod(writeToParcel)
         .addMethod(describeContents)
@@ -161,8 +155,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     return builder.build();
   }
 
-  FieldSpec generateCreator(ProcessingEnvironment env, List<Property> properties, TypeName type,
-      FieldSpec classLoader) {
+  FieldSpec generateCreator(ProcessingEnvironment env, List<Property> properties, TypeName type) {
     ClassName creator = ClassName.bestGuess("android.os.Parcelable.Creator");
     TypeName creatorOfClass = ParameterizedTypeName.get(creator, type);
 
@@ -170,22 +163,29 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     CodeBlock.Builder ctorCall = CodeBlock.builder();
     ctorCall.add("return new $T(\n", type);
     ctorCall.indent().indent();
+    boolean requiresClassLoader = false;
     for (int i = 0, n = properties.size(); i < n; i++) {
-      ctorCall.add(Parcelables.readValue(typeUtils, properties.get(i), classLoader));
+      requiresClassLoader |= Parcelables.appendReadValue(ctorCall, properties.get(i), typeUtils);
+
       if (i < n - 1) ctorCall.add(",");
       ctorCall.add("\n");
     }
     ctorCall.unindent().unindent();
     ctorCall.add(");\n");
 
+    MethodSpec.Builder createFromParcel = MethodSpec.methodBuilder("createFromParcel")
+        .addAnnotation(Override.class)
+        .addModifiers(Modifier.PUBLIC)
+        .returns(type)
+        .addParameter(ClassName.bestGuess("android.os.Parcel"), "in");
+    if (requiresClassLoader) {
+      createFromParcel.addStatement("$T cl = $T.class.getClassLoader()", ClassLoader.class, type);
+    }
+    createFromParcel.addCode(ctorCall.build());
+
     TypeSpec creatorImpl = TypeSpec.anonymousClassBuilder("")
         .superclass(creatorOfClass)
-        .addMethod(MethodSpec.methodBuilder("createFromParcel")
-            .addAnnotation(Override.class)
-            .addModifiers(Modifier.PUBLIC)
-            .returns(type)
-            .addParameter(ClassName.bestGuess("android.os.Parcel"), "in")
-            .addCode(ctorCall.build())
+        .addMethod(createFromParcel
             .build())
         .addMethod(MethodSpec.methodBuilder("newArray")
             .addAnnotation(Override.class)
@@ -199,7 +199,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     return FieldSpec
         .builder(creatorOfClass, "CREATOR", Modifier.PUBLIC,
             Modifier.FINAL, Modifier.STATIC)
-        .initializer(creatorImpl.toString())
+        .initializer("$L", creatorImpl)
         .build();
   }
 

@@ -153,26 +153,23 @@ public class AutoValueParcelExtensionTest {
         "\n" +
         "import android.os.Parcel;\n" +
         "import android.os.Parcelable;\n" +
-        "import java.lang.ClassLoader;\n" +
         "import java.lang.Double;\n" +
         "import java.lang.Override;\n" +
         "import java.lang.String;\n" +
         "\n" +
         "final class AutoValue_Test extends $AutoValue_Test {\n" +
-        "  static final ClassLoader CL = AutoValue_Test.class.getClassLoader();\n" +
+        "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = new Parcelable.Creator<AutoValue_Test>() {\n" +
         "\n" +
-        "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = new android.os.Parcelable.Creator<AutoValue_Test>() {\n" +
-        "\n" +
-        "    @java.lang.Override\n" +
-        "    public AutoValue_Test createFromParcel(android.os.Parcel in) {\n" +
+        "    @Override\n" +
+        "    public AutoValue_Test createFromParcel(Parcel in) {\n" +
         "      return new AutoValue_Test(\n" +
         "          in.readInt(),\n" +
-        "          in.readInt() == 0 ? (java.lang.Double) in.readSerializable() : null,\n" +
+        "          in.readInt() == 0 ? (Double) in.readSerializable() : null,\n" +
         "          in.readString(),\n" +
         "          in.readLong()\n" +
         "      );\n" +
         "    }\n" +
-        "    @java.lang.Override\n" +
+        "    @Override\n" +
         "    public AutoValue_Test[] newArray(int size) {\n" +
         "      return new AutoValue_Test[size];\n" +
         "    }\n" +
@@ -269,17 +266,16 @@ public class AutoValueParcelExtensionTest {
         "import java.util.List;\n" +
         "\n" +
         "final class AutoValue_Test extends $AutoValue_Test {\n" +
-        "  static final ClassLoader CL = AutoValue_Test.class.getClassLoader();\n" +
-        "\n" +
-        "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = new android.os.Parcelable.Creator<AutoValue_Test>() {\n" +
-        "    @java.lang.Override\n" +
-        "    public AutoValue_Test createFromParcel(android.os.Parcel in) {\n" +
+        "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = new Parcelable.Creator<AutoValue_Test>() {\n" +
+        "    @Override\n" +
+        "    public AutoValue_Test createFromParcel(Parcel in) {\n" +
+        "      ClassLoader cl = AutoValue_Test.class.getClassLoader();\n" +
         "      return new AutoValue_Test(\n" +
-        "        (java.util.List<test.Parcelable1>) in.readArrayList(CL),\n" +
+        "        (List<Parcelable1>) in.readArrayList(cl),\n" +
         "        in.createIntArray()\n" +
         "      );\n" +
         "    }\n" +
-        "    @java.lang.Override\n" +
+        "    @Override\n" +
         "    public AutoValue_Test[] newArray(int size) {\n" +
         "      return new AutoValue_Test[size];\n" +
         "    }\n" +
@@ -392,11 +388,10 @@ public class AutoValueParcelExtensionTest {
         "import java.util.Map;\n" +
         "\n" +
         "final class AutoValue_Foo extends $AutoValue_Foo {\n" +
-        "  static final ClassLoader CL = AutoValue_Foo.class.getClassLoader();\n" +
-        "\n" +
-        "  public static final Parcelable.Creator<AutoValue_Foo> CREATOR = new android.os.Parcelable.Creator<AutoValue_Foo>() {\n" +
-        "    @java.lang.Override\n" +
-        "    public AutoValue_Foo createFromParcel(android.os.Parcel in) {\n" +
+        "  public static final Parcelable.Creator<AutoValue_Foo> CREATOR = new Parcelable.Creator<AutoValue_Foo>() {\n" +
+        "    @Override\n" +
+        "    public AutoValue_Foo createFromParcel(Parcel in) {\n" +
+        "      ClassLoader cl = AutoValue_Foo.class.getClassLoader();\n" +
         "      return new AutoValue_Foo(\n" +
         "        in.readInt() == 0 ? in.readString() : null,\n" +
         "        in.readByte(),\n" +
@@ -406,27 +401,27 @@ public class AutoValueParcelExtensionTest {
         "        in.readFloat(),\n" +
         "        in.readDouble(),\n" +
         "        in.readInt() == 1,\n" +
-        "        (android.os.Parcelable) in.readParcelable(CL),\n" +
-        "        (java.lang.CharSequence) in.readCharSequence(),\n" +
-        "        (java.util.Map<java.lang.String, java.lang.String>) in.readHashMap(CL),\n" +
-        "        (java.util.List<java.lang.String>) in.readArrayList(CL),\n" +
+        "        (Parcelable) in.readParcelable(cl),\n" +
+        "        (CharSequence) in.readCharSequence(),\n" +
+        "        (Map<String, String>) in.readHashMap(cl),\n" +
+        "        (List<String>) in.readArrayList(cl),\n" +
         "        in.createBooleanArray(),\n" +
         "        in.createByteArray(),\n" +
         "        in.createIntArray(),\n" +
         "        in.createLongArray(),\n" +
-        "        (java.io.Serializable) in.readSerializable(),\n" +
-        "        in.readSparseArray(CL),\n" +
+        "        (Serializable) in.readSerializable(),\n" +
+        "        in.readSparseArray(cl),\n" +
         "        in.readSparseBooleanArray(),\n" +
-        "        in.readBundle(CL),\n" +
-        "        in.readPersistableBundle(CL),\n" +
+        "        in.readBundle(cl),\n" +
+        "        in.readPersistableBundle(cl),\n" +
         "        in.readSize(),\n" +
         "        in.readSizeF(),\n" +
-        "        in.readInt() == 0 ? (test.Parcelable1) in.readParcelable(CL) : null,\n" +
-        "        (test.FooBinder) in.readStrongBinder(),\n" +
-        "        in.readInt() == 0 ? (java.lang.Boolean) in.readSerializable() : null\n" +
+        "        in.readInt() == 0 ? (Parcelable1) in.readParcelable(cl) : null,\n" +
+        "        (FooBinder) in.readStrongBinder(),\n" +
+        "        in.readInt() == 0 ? (Boolean) in.readSerializable() : null\n" +
         "      );\n" +
         "    }\n" +
-        "    @java.lang.Override\n" +
+        "    @Override\n" +
         "    public AutoValue_Foo[] newArray(int size) {\n" +
         "      return new AutoValue_Foo[size];\n" +
         "    }\n" +
