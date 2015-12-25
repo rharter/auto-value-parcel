@@ -17,16 +17,9 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
-
-import java.io.Serializable;
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
 import java.util.Set;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationMirror;
@@ -34,10 +27,8 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ArrayType;
-import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 
@@ -49,8 +40,6 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     ExecutableElement element;
     TypeName type;
     ImmutableSet<String> annotations;
-
-    public Property() {}
 
     public Property(String name, ExecutableElement element) {
       this.name = name;
@@ -152,8 +141,6 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
       }
     }
   }
-
-  private static final ImmutableSet<String> METHOD_EXCLUDES = ImmutableSet.of("describeContents");
 
   MethodSpec generateConstructor(List<Property> properties) {
     List<ParameterSpec> params = Lists.newArrayListWithCapacity(properties.size());
