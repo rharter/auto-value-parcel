@@ -100,17 +100,15 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     TypeName type = ClassName.bestGuess(className);
 
     FieldSpec classLoader = FieldSpec
-        .builder(ClassName.get(ClassLoader.class), "CL", Modifier.PRIVATE, Modifier.FINAL,
-            Modifier.STATIC)
+        .builder(ClassName.get(ClassLoader.class), "CL", Modifier.FINAL, Modifier.STATIC)
         .initializer("$T.class.getClassLoader()", type)
         .build();
 
     MethodSpec constructor = generateConstructor(properties);
-    MethodSpec parcelConstructor = generateParcelConstructor(context.processingEnvironment(),
-        properties, classLoader);
     MethodSpec writeToParcel = generateWriteToParcel(context.processingEnvironment(), properties);
     MethodSpec describeContents = generateDescribeContents();
-    FieldSpec creator = generateCreator(className);
+    FieldSpec creator =
+        generateCreator(context.processingEnvironment(), properties, type, classLoader);
 
     TypeSpec subclass = TypeSpec.classBuilder(className)
         .addModifiers(Modifier.FINAL)
@@ -120,7 +118,6 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
         .addField(creator)
         .addMethod(writeToParcel)
         .addMethod(describeContents)
-        .addMethod(parcelConstructor)
         .build();
 
     JavaFile javaFile = JavaFile.builder(context.packageName(), subclass).build();
@@ -177,48 +174,38 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     return builder.build();
   }
 
-  MethodSpec generateParcelConstructor(ProcessingEnvironment env, List<Property> properties,
+  FieldSpec generateCreator(ProcessingEnvironment env, List<Property> properties, TypeName type,
       FieldSpec classLoader) {
-    ParameterSpec in = ParameterSpec.builder(ClassName.get("android.os", "Parcel"), "in").build();
-    MethodSpec.Builder builder = MethodSpec.constructorBuilder()
-        .addModifiers(Modifier.PRIVATE)
-        .addParameter(in);
+    ClassName creator = ClassName.bestGuess("android.os.Parcelable.Creator");
+    TypeName creatorOfClass = ParameterizedTypeName.get(creator, type);
 
     Types typeUtils = env.getTypeUtils();
-    CodeBlock.Builder content = CodeBlock.builder();
-    content.add("super(\n");
-    content.indent();
+    CodeBlock.Builder ctorCall = CodeBlock.builder();
+    ctorCall.add("return new $T(\n", type);
+    ctorCall.indent().indent();
     for (int i = 0, n = properties.size(); i < n; i++) {
-      content.add(Parcelables.readValue(typeUtils, properties.get(i), in, classLoader));
-      if (i < n - 1) content.add(",");
-      content.add("\n");
+      ctorCall.add(Parcelables.readValue(typeUtils, properties.get(i), classLoader));
+      if (i < n - 1) ctorCall.add(",");
+      ctorCall.add("\n");
     }
-    content.unindent();
-    content.add(");\n");
-
-    return builder.addCode(content.build()).build();
-  }
-
-  FieldSpec generateCreator(String cls) {
-    ClassName className = ClassName.bestGuess(cls);
-    ClassName creator = ClassName.bestGuess("android.os.Parcelable.Creator");
-    TypeName creatorOfClass = ParameterizedTypeName.get(creator, className);
+    ctorCall.unindent().unindent();
+    ctorCall.add(");\n");
 
     TypeSpec creatorImpl = TypeSpec.anonymousClassBuilder("")
         .superclass(creatorOfClass)
         .addMethod(MethodSpec.methodBuilder("createFromParcel")
             .addAnnotation(Override.class)
             .addModifiers(Modifier.PUBLIC)
-            .returns(className)
+            .returns(type)
             .addParameter(ClassName.bestGuess("android.os.Parcel"), "in")
-            .addStatement("return new $T(in)", className)
+            .addCode(ctorCall.build())
             .build())
         .addMethod(MethodSpec.methodBuilder("newArray")
             .addAnnotation(Override.class)
             .addModifiers(Modifier.PUBLIC)
-            .returns(ArrayTypeName.of(className))
+            .returns(ArrayTypeName.of(type))
             .addParameter(int.class, "size")
-            .addStatement("return new $T[size]", className)
+            .addStatement("return new $T[size]", type)
             .build())
         .build();
 
