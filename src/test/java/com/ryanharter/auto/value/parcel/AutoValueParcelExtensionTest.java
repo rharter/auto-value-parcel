@@ -159,12 +159,18 @@ public class AutoValueParcelExtensionTest {
         "import java.lang.String;\n" +
         "\n" +
         "final class AutoValue_Test extends $AutoValue_Test {\n" +
-        "  private static final ClassLoader CL = AutoValue_Test.class.getClassLoader();\n" +
+        "  static final ClassLoader CL = AutoValue_Test.class.getClassLoader();\n" +
         "\n" +
         "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = new android.os.Parcelable.Creator<AutoValue_Test>() {\n" +
+        "\n" +
         "    @java.lang.Override\n" +
         "    public AutoValue_Test createFromParcel(android.os.Parcel in) {\n" +
-        "      return new AutoValue_Test(in);\n" +
+        "      return new AutoValue_Test(\n" +
+        "          in.readInt(),\n" +
+        "          in.readInt() == 0 ? (java.lang.Double) in.readSerializable() : null,\n" +
+        "          in.readString(),\n" +
+        "          in.readLong()\n" +
+        "      );\n" +
         "    }\n" +
         "    @java.lang.Override\n" +
         "    public AutoValue_Test[] newArray(int size) {\n" +
@@ -174,15 +180,6 @@ public class AutoValueParcelExtensionTest {
         "\n" +
         "  AutoValue_Test(int a, Double b, String c, long d) {\n" +
         "    super(a, b, c, d);\n" +
-        "  }\n" +
-        "\n" +
-        "  private AutoValue_Test(Parcel in) {\n" +
-        "    super(\n" +
-        "      in.readInt(),\n" +
-        "      in.readInt() == 0 ? (Double) in.readSerializable() : null,\n" +
-        "      in.readString(),\n" +
-        "      in.readLong()\n" +
-        "    );\n" +
         "  }\n" +
         "\n" +
         "  @Override\n" +
@@ -272,12 +269,15 @@ public class AutoValueParcelExtensionTest {
         "import java.util.List;\n" +
         "\n" +
         "final class AutoValue_Test extends $AutoValue_Test {\n" +
-        "  private static final ClassLoader CL = AutoValue_Test.class.getClassLoader();\n" +
+        "  static final ClassLoader CL = AutoValue_Test.class.getClassLoader();\n" +
         "\n" +
         "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = new android.os.Parcelable.Creator<AutoValue_Test>() {\n" +
         "    @java.lang.Override\n" +
         "    public AutoValue_Test createFromParcel(android.os.Parcel in) {\n" +
-        "      return new AutoValue_Test(in);\n" +
+        "      return new AutoValue_Test(\n" +
+        "        (java.util.List<test.Parcelable1>) in.readArrayList(CL),\n" +
+        "        in.createIntArray()\n" +
+        "      );\n" +
         "    }\n" +
         "    @java.lang.Override\n" +
         "    public AutoValue_Test[] newArray(int size) {\n" +
@@ -287,13 +287,6 @@ public class AutoValueParcelExtensionTest {
         "\n" +
         "  AutoValue_Test(List<Parcelable1> a, int[] b) {\n" +
         "    super(a, b);\n" +
-        "  }\n" +
-        "\n" +
-        "  private AutoValue_Test(Parcel in) {\n" +
-        "    super(\n" +
-        "      (List<Parcelable1>) in.readArrayList(CL),\n" +
-        "      in.createIntArray()\n" +
-        "    );\n" +
         "  }\n" +
         "\n" +
         "  @Override\n" +
@@ -399,12 +392,39 @@ public class AutoValueParcelExtensionTest {
         "import java.util.Map;\n" +
         "\n" +
         "final class AutoValue_Foo extends $AutoValue_Foo {\n" +
-        "  private static final ClassLoader CL = AutoValue_Foo.class.getClassLoader();\n" +
+        "  static final ClassLoader CL = AutoValue_Foo.class.getClassLoader();\n" +
         "\n" +
         "  public static final Parcelable.Creator<AutoValue_Foo> CREATOR = new android.os.Parcelable.Creator<AutoValue_Foo>() {\n" +
         "    @java.lang.Override\n" +
         "    public AutoValue_Foo createFromParcel(android.os.Parcel in) {\n" +
-        "      return new AutoValue_Foo(in);\n" +
+        "      return new AutoValue_Foo(\n" +
+        "        in.readInt() == 0 ? in.readString() : null,\n" +
+        "        in.readByte(),\n" +
+        "        in.readInt(),\n" +
+        "        (short) in.readInt(),\n" +
+        "        in.readLong(),\n" +
+        "        in.readFloat(),\n" +
+        "        in.readDouble(),\n" +
+        "        in.readInt() == 1,\n" +
+        "        (android.os.Parcelable) in.readParcelable(CL),\n" +
+        "        (java.lang.CharSequence) in.readCharSequence(),\n" +
+        "        (java.util.Map<java.lang.String, java.lang.String>) in.readHashMap(CL),\n" +
+        "        (java.util.List<java.lang.String>) in.readArrayList(CL),\n" +
+        "        in.createBooleanArray(),\n" +
+        "        in.createByteArray(),\n" +
+        "        in.createIntArray(),\n" +
+        "        in.createLongArray(),\n" +
+        "        (java.io.Serializable) in.readSerializable(),\n" +
+        "        in.readSparseArray(CL),\n" +
+        "        in.readSparseBooleanArray(),\n" +
+        "        in.readBundle(CL),\n" +
+        "        in.readPersistableBundle(CL),\n" +
+        "        in.readSize(),\n" +
+        "        in.readSizeF(),\n" +
+        "        in.readInt() == 0 ? (test.Parcelable1) in.readParcelable(CL) : null,\n" +
+        "        (test.FooBinder) in.readStrongBinder(),\n" +
+        "        in.readInt() == 0 ? (java.lang.Boolean) in.readSerializable() : null\n" +
+        "      );\n" +
         "    }\n" +
         "    @java.lang.Override\n" +
         "    public AutoValue_Foo[] newArray(int size) {\n" +
@@ -415,36 +435,6 @@ public class AutoValueParcelExtensionTest {
         "  AutoValue_Foo(String a, byte b, int c, short d, long e, float f, double g, boolean h, Parcelable i, CharSequence j, Map<String, String> k, List<String> l, boolean[] m, byte[] n, int[] s, long[] t, Serializable u, SparseArray w, SparseBooleanArray x, Bundle y, PersistableBundle z, Size aa, SizeF ab, Parcelable1 ad, FooBinder ae, Boolean af) {\n" +
         "    super(a, b, c, d, e, f, g, h, i, j, k, l, m, n, s, t, u, w, x, y, z, aa, ab, ad, ae, af);\n" +
         "  }\n" +
-        "\n" +
-        "  private AutoValue_Foo(Parcel in) {\n" +
-        "    super(\n" +
-        "      in.readInt() == 0 ? in.readString() : null,\n" +
-        "      in.readByte(),\n" +
-        "      in.readInt(),\n" +
-        "      (short) in.readInt(),\n" +
-        "      in.readLong(),\n" +
-        "      in.readFloat(),\n" +
-        "      in.readDouble(),\n" +
-        "      in.readInt() == 1,\n" +
-        "      (Parcelable) in.readParcelable(CL),\n" +
-        "      (CharSequence) in.readCharSequence(),\n" +
-        "      (Map<String, String>) in.readHashMap(CL),\n" +
-        "      (List<String>) in.readArrayList(CL),\n" +
-        "      in.createBooleanArray(),\n" +
-        "      in.createByteArray(),\n" +
-        "      in.createIntArray(),\n" +
-        "      in.createLongArray(),\n" +
-        "      (Serializable) in.readSerializable(),\n" +
-        "      in.readSparseArray(CL),\n" +
-        "      in.readSparseBooleanArray(),\n" +
-        "      in.readBundle(CL),\n" +
-        "      in.readPersistableBundle(CL),\n" +
-        "      in.readSize(),\n" +
-        "      in.readSizeF(),\n" +
-        "      in.readInt() == 0 ? (Parcelable1) in.readParcelable(CL) : null,\n" +
-        "      (FooBinder) in.readStrongBinder(),\n" +
-        "      in.readInt() == 0 ? (Boolean) in.readSerializable() : null\n" +
-        "    );}\n" +
         "\n" +
         "  @Override\n" +
         "  public void writeToParcel(Parcel dest, int flags) {\n" +

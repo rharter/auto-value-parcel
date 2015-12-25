@@ -84,74 +84,74 @@ final class Parcelables {
     return null;
   }
 
-  public static CodeBlock readValue(Types types, AutoValueParcelExtension.Property property, ParameterSpec in,
+  public static CodeBlock readValue(Types types, AutoValueParcelExtension.Property property,
       FieldSpec classloader) {
     CodeBlock.Builder block = CodeBlock.builder();
 
     if (property.nullable()){
-      block.add("$N.readInt() == 0 ? ", in);
+      block.add("in.readInt() == 0 ? ");
     }
 
-    TypeElement element = (TypeElement) types.asElement(property.element.getReturnType());    
+    TypeElement element = (TypeElement) types.asElement(property.element.getReturnType());
     final TypeName type = element != null ? getParcelableType(types, element) : property.type;
     if (type.equals(STRING))
-      block.add("$N.readString()", in);
+      block.add("in.readString()");
     else if (type.equals(TypeName.BYTE))
-      block.add("$N.readByte()", in);
+      block.add("in.readByte()");
     else if (type.equals(TypeName.INT))
-      block.add("$N.readInt()", in);
+      block.add("in.readInt()");
     else if (type.equals(TypeName.SHORT))
-      block.add("(short) $N.readInt()", in);
+      block.add("(short) in.readInt()");
     else if (type.equals(TypeName.LONG))
-      block.add("$N.readLong()", in);
+      block.add("in.readLong()");
     else if (type.equals(TypeName.FLOAT))
-      block.add("$N.readFloat()", in);
+      block.add("in.readFloat()");
     else if (type.equals(TypeName.DOUBLE))
-      block.add("$N.readDouble()", in);
+      block.add("in.readDouble()");
     else if (type.equals(TypeName.BOOLEAN))
-      block.add("$N.readInt() == 1", in);
+      block.add("in.readInt() == 1");
     else if (type.equals(PARCELABLE))
-      block.add("($T) $N.readParcelable($N)", property.type, in, classloader);
+      block.add("($T) in.readParcelable($N)", property.type, classloader);
     else if (type.equals(CHARSEQUENCE))
-      block.add("($T) $N.readCharSequence()", property.type, in);
+      block.add("($T) in.readCharSequence()", property.type);
     else if (type.equals(MAP))
-      block.add("($T) $N.readHashMap($N)", property.type, in, classloader);
+      block.add("($T) in.readHashMap($N)", property.type, classloader);
     else if (type.equals(LIST))
-      block.add("($T) $N.readArrayList($N)", property.type, in, classloader);
+      block.add("($T) in.readArrayList($N)", property.type, classloader);
     else if (type.equals(BOOLEANARRAY))
-      block.add("$N.createBooleanArray()", in);
+      block.add("in.createBooleanArray()");
     else if (type.equals(BYTEARRAY))
-      block.add("$N.createByteArray()", in);
+      block.add("in.createByteArray()");
     else if (type.equals(STRINGARRAY))
-      block.add("$N.readStringArray()", in);
+      block.add("in.readStringArray()");
     else if (type.equals(CHARSEQUENCEARRAY))
-      block.add("$N.readCharSequenceArray()", in);
+      block.add("in.readCharSequenceArray()");
     else if (type.equals(IBINDER))
-      block.add("($T) $N.readStrongBinder()", property.type, in);
+      block.add("($T) in.readStrongBinder()", property.type);
     else if (type.equals(OBJECTARRAY))
-      block.add("$N.readArray($N)", in, classloader);
+      block.add("in.readArray($N)", classloader);
     else if (type.equals(INTARRAY))
-      block.add("$N.createIntArray()", in);
+      block.add("in.createIntArray()");
     else if (type.equals(LONGARRAY))
-      block.add("$N.createLongArray()", in);
+      block.add("in.createLongArray()");
     else if (type.equals(SERIALIZABLE))
-      block.add("($T) $N.readSerializable()", property.type, in);
+      block.add("($T) in.readSerializable()", property.type);
     else if (type.equals(PARCELABLEARRAY))
-      block.add("($T) $N.readParcelableArray($N)", property.type, in, classloader);
+      block.add("($T) in.readParcelableArray($N)", property.type, classloader);
     else if (type.equals(SPARSEARRAY))
-      block.add("$N.readSparseArray($N)", in, classloader);
+      block.add("in.readSparseArray($N)", classloader);
     else if (type.equals(SPARSEBOOLEANARRAY))
-      block.add("$N.readSparseBooleanArray()", in);
+      block.add("in.readSparseBooleanArray()");
     else if (type.equals(BUNDLE))
-      block.add("$N.readBundle($N)", in, classloader);
+      block.add("in.readBundle($N)", classloader);
     else if (type.equals(PERSISTABLEBUNDLE))
-      block.add("$N.readPersistableBundle($N)", in, classloader);
+      block.add("in.readPersistableBundle($N)", classloader);
     else if (type.equals(SIZE))
-      block.add("$N.readSize()", in);
+      block.add("in.readSize()");
     else if (type.equals(SIZEF))
-      block.add("$N.readSizeF()", in);
+      block.add("in.readSizeF()");
     else
-      block.add("($T) $N.readValue($N)", property.type, in, classloader);
+      block.add("($T) in.readValue($N)", property.type, classloader);
 
     if (property.nullable()){
       block.add(" : null");
