@@ -250,9 +250,6 @@ public class AutoValueParcelExtensionTest {
         + "@AutoValue public abstract class Test implements Parcelable {\n"
             + "public abstract List<Parcelable1> a();\n"
             + "public abstract int[] b();\n"
-        + "public int describeContents() {\n"
-        + "return 0;\n"
-        + "}\n"
         + "}"
     );
 
@@ -303,6 +300,107 @@ public class AutoValueParcelExtensionTest {
         .compilesWithoutError()
         .and()
         .generatesSources(expected);
+  }
+
+  @Test public void describeContentsOmittedWhenAlreadyDefined() {
+    JavaFileObject notMatching = JavaFileObjects.forSourceString("test.No", ""
+        + "package test;\n"
+        + "import android.os.Parcelable;\n"
+        + "import com.google.auto.value.AutoValue;\n"
+        + "@AutoValue public abstract class No implements Parcelable {\n"
+        + "  public abstract String name();\n"
+        + "  @Override public abstract int describeContents();\n"
+        + "  public int describeContents(String name) {\n"
+        + "    return 0;\n"
+        + "  }\n"
+        + "}");
+    JavaFileObject matching = JavaFileObjects.forSourceString("test.Yes", ""
+        + "package test;\n"
+        + "import android.os.Parcelable;\n"
+        + "import com.google.auto.value.AutoValue;\n"
+        + "@AutoValue public abstract class Yes implements Parcelable {\n"
+        + "  public abstract String name();\n"
+        + "public int describeContents() {\n"
+        + "  return 0;\n"
+        + "}\n"
+        + "}"
+    );
+
+    JavaFileObject expectedNotMatching = JavaFileObjects.forSourceString("test/AutoValue_No", ""
+        + "package test;\n" +
+        "\n" +
+        "import android.os.Parcel;\n" +
+        "import android.os.Parcelable;\n" +
+        "import java.lang.Override;\n" +
+        "import java.lang.String;\n" +
+        "\n" +
+        "final class AutoValue_No extends $AutoValue_No {\n" +
+        "  public static final Parcelable.Creator<AutoValue_No> CREATOR = new Parcelable.Creator<AutoValue_No>() {\n" +
+        "    @Override\n" +
+        "    public AutoValue_No createFromParcel(Parcel in) {\n" +
+        "      return new AutoValue_No(\n" +
+        "        in.readString()\n" +
+        "      );\n" +
+        "    }\n" +
+        "    @Override\n" +
+        "    public AutoValue_No[] newArray(int size) {\n" +
+        "      return new AutoValue_No[size];\n" +
+        "    }\n" +
+        "  };\n" +
+        "\n" +
+        "  AutoValue_No(String name) {\n" +
+        "    super(name);\n" +
+        "  }\n" +
+        "\n" +
+        "  @Override\n" +
+        "  public void writeToParcel(Parcel dest, int flags) {\n" +
+        "    dest.writeString(name());\n" +
+        "  }\n" +
+        "\n" +
+        "  @Override\n" +
+        "  public int describeContents() {\n" +
+        "    return 0;\n" +
+        "  }\n" +
+        "}");
+
+    JavaFileObject expectedMatching = JavaFileObjects.forSourceString("test/AutoValue_Yes", ""
+        + "package test;\n" +
+        "\n" +
+        "import android.os.Parcel;\n" +
+        "import android.os.Parcelable;\n" +
+        "import java.lang.Override;\n" +
+        "import java.lang.String;\n" +
+        "\n" +
+        "final class AutoValue_Yes extends $AutoValue_Yes {\n" +
+        "  public static final Parcelable.Creator<AutoValue_Yes> CREATOR = new Parcelable.Creator<AutoValue_Yes>() {\n" +
+        "    @Override\n" +
+        "    public AutoValue_Yes createFromParcel(Parcel in) {\n" +
+        "      return new AutoValue_Yes(\n" +
+        "        in.readString()\n" +
+        "      );\n" +
+        "    }\n" +
+        "    @Override\n" +
+        "    public AutoValue_Yes[] newArray(int size) {\n" +
+        "      return new AutoValue_Yes[size];\n" +
+        "    }\n" +
+        "  };\n" +
+        "\n" +
+        "  AutoValue_Yes(String name) {\n" +
+        "    super(name);\n" +
+        "  }\n" +
+        "\n" +
+        "  @Override\n" +
+        "  public void writeToParcel(Parcel dest, int flags) {\n" +
+        "    dest.writeString(name());\n" +
+        "  }\n" +
+        "}");
+
+    assertAbout(javaSources())
+        .that(Arrays.asList(parcel, parcelable, notMatching, matching))
+        .processedWith(new AutoValueProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expectedNotMatching, expectedMatching);
   }
 
   @Test public void handlesAllParcelableTypes() {
