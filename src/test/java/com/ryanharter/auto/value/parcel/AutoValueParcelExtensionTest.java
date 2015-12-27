@@ -206,6 +206,68 @@ public class AutoValueParcelExtensionTest {
         .generatesSources(expected);
   }
 
+  @Test public void propertyMethodReferencedWithPrefix() {
+    JavaFileObject source1 = JavaFileObjects.forSourceString("test.AbstractParcelable", ""
+        + "package test;\n"
+        + "import android.os.Parcelable;\n"
+        + "public abstract class AbstractParcelable implements Parcelable {\n"
+        + "  @Override public final int describeContents() {\n"
+        + "    return 0;\n"
+        + "  }\n"
+        + "}"
+    );
+    JavaFileObject source2 = JavaFileObjects.forSourceString("test.Test", ""
+        + "package test;\n"
+        + "import com.google.auto.value.AutoValue;\n"
+        + "@AutoValue public abstract class Test extends AbstractParcelable {\n"
+        + "  public abstract String getName();\n"
+        + "  public abstract boolean isAwesome();\n"
+        + "}"
+    );
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test/AutoValue_Test", ""
+        + "package test;\n" +
+        "\n" +
+        "import android.os.Parcel;\n" +
+        "import android.os.Parcelable;\n" +
+        "import java.lang.Override;\n" +
+        "import java.lang.String;\n" +
+        "\n" +
+        "final class AutoValue_Test extends $AutoValue_Test {\n" +
+        "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = new Parcelable.Creator<AutoValue_Test>() {\n" +
+        "\n" +
+        "    @Override\n" +
+        "    public AutoValue_Test createFromParcel(Parcel in) {\n" +
+        "      return new AutoValue_Test(\n" +
+        "          in.readString(),\n" +
+        "          in.readInt() == 1\n" +
+        "      );\n" +
+        "    }\n" +
+        "    @Override\n" +
+        "    public AutoValue_Test[] newArray(int size) {\n" +
+        "      return new AutoValue_Test[size];\n" +
+        "    }\n" +
+        "  };\n" +
+        "\n" +
+        "  AutoValue_Test(String name, boolean awesome) {\n" +
+        "    super(name, awesome);\n" +
+        "  }\n" +
+        "\n" +
+        "  @Override\n" +
+        "  public void writeToParcel(Parcel dest, int flags) {\n" +
+        "    dest.writeString(getName());\n" +
+        "    dest.writeInt(isAwesome() ? 1 : 0);\n" +
+        "  }\n" +
+        "}");
+
+    assertAbout(javaSources())
+        .that(Arrays.asList(parcel, parcelable, nullable, source1, source2))
+        .processedWith(new AutoValueProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
   @Test public void builder() {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", ""
         + "package test;\n"
