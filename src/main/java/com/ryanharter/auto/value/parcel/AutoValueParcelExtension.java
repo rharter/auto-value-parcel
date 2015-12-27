@@ -1,5 +1,7 @@
 package com.ryanharter.auto.value.parcel;
 
+import com.google.auto.common.MoreElements;
+import com.google.auto.common.MoreTypes;
 import com.google.auto.service.AutoService;
 import com.google.auto.value.extension.AutoValueExtension;
 import com.google.common.collect.ImmutableList;
@@ -83,28 +85,39 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
   @Override
   public String generateClass(Context context, String className, String classToExtend,
                               boolean isFinal) {
+    ProcessingEnvironment env = context.processingEnvironment();
+
     ImmutableList<Property> properties = readProperties(context.properties());
-    validateProperties(context.processingEnvironment(), properties);
+    validateProperties(env, properties);
 
     TypeName type = ClassName.bestGuess(className);
-
-    MethodSpec constructor = generateConstructor(properties);
-    MethodSpec writeToParcel = generateWriteToParcel(context.processingEnvironment(), properties);
-    MethodSpec describeContents = generateDescribeContents();
-    FieldSpec creator =
-        generateCreator(context.processingEnvironment(), properties, type);
-
-    TypeSpec subclass = TypeSpec.classBuilder(className)
+    TypeSpec.Builder subclass = TypeSpec.classBuilder(className)
         .addModifiers(Modifier.FINAL)
         .superclass(TypeVariableName.get(classToExtend))
-        .addMethod(constructor)
-        .addField(creator)
-        .addMethod(writeToParcel)
-        .addMethod(describeContents)
-        .build();
+        .addMethod(generateConstructor(properties))
+        .addField(generateCreator(env, properties, type))
+        .addMethod(generateWriteToParcel(env, properties));
 
-    JavaFile javaFile = JavaFile.builder(context.packageName(), subclass).build();
+    if (needsContentDescriptor(context)) {
+      subclass.addMethod(generateDescribeContents());
+    }
+
+    JavaFile javaFile = JavaFile.builder(context.packageName(), subclass.build()).build();
     return javaFile.toString();
+  }
+
+  private static boolean needsContentDescriptor(Context context) {
+    ProcessingEnvironment env = context.processingEnvironment();
+    for (ExecutableElement element : MoreElements.getLocalAndInheritedMethods(
+        context.autoValueClass(), env.getElementUtils())) {
+      if (element.getSimpleName().contentEquals("describeContents")
+          && MoreTypes.isTypeOf(int.class, element.getReturnType())
+          && element.getParameters().isEmpty()
+          && !element.getModifiers().contains(Modifier.ABSTRACT)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   private ImmutableList<Property> readProperties(Map<String, ExecutableElement> properties) {
