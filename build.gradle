@@ -1,30 +1,18 @@
-import org.gradle.internal.jvm.Jvm
-
-apply plugin: 'java'
-apply plugin: 'maven-publish'
-
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
-
-repositories {
-    maven {
-        url 'http://oss.sonatype.org/content/repositories/snapshots'
+subprojects { project ->
+    repositories {
+        maven {
+            url 'http://oss.sonatype.org/content/repositories/snapshots'
+        }
+        mavenCentral()
     }
-    mavenCentral()
+
+    buildscript {
+        repositories {
+            jcenter()
+        }
+
+        dependencies {
+            classpath 'com.netflix.nebula:gradle-extra-configurations-plugin:3.0.3'
+        }
+    }
 }
-
-dependencies {
-    compile 'com.squareup:javapoet:1.1.0'
-    compile 'com.google.auto.value:auto-value:1.2-SNAPSHOT'
-    compile 'com.google.auto:auto-common:1.0-SNAPSHOT'
-    compile 'org.apache.commons:commons-lang3:3.4'
-    compile 'com.google.auto.service:auto-service:1.0-rc2'
-
-    testCompile 'junit:junit:4.11'
-    testCompile 'com.google.truth:truth:0.27'
-    testCompile 'org.mockito:mockito-core:2.0.26-beta'
-    testCompile 'com.google.testing.compile:compile-testing:0.6'
-    testCompile files(Jvm.current().getToolsJar())
-}
-
-apply from: rootProject.file('gradle/gradle-mvn-push.gradle')
