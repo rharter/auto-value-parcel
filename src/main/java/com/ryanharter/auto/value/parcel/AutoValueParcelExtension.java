@@ -38,13 +38,15 @@ import javax.tools.Diagnostic;
 public final class AutoValueParcelExtension extends AutoValueExtension {
 
   static final class Property {
-    String name;
-    ExecutableElement element;
-    TypeName type;
-    ImmutableSet<String> annotations;
+    final String methodName;
+    final String humanName;
+    final ExecutableElement element;
+    final TypeName type;
+    final ImmutableSet<String> annotations;
 
-    public Property(String name, ExecutableElement element) {
-      this.name = name;
+    public Property(String humanName, ExecutableElement element) {
+      this.methodName = element.getSimpleName().toString();
+      this.humanName = humanName;
       this.element = element;
       type = TypeName.get(element.getReturnType());
       annotations = buildAnnotations(element);
@@ -140,7 +142,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
       if ((element == null || !Parcelables.isValidType(typeUtils, element)) &&
           !Parcelables.isValidType(TypeName.get(type))){
         env.getMessager().printMessage(Diagnostic.Kind.ERROR, "AutoValue property " +
-            property.name + " is not a supported Parcelable type.", property.element);
+            property.methodName + " is not a supported Parcelable type.", property.element);
         throw new AutoValueParcelException();
       }
     }
@@ -149,7 +151,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
   MethodSpec generateConstructor(List<Property> properties) {
     List<ParameterSpec> params = Lists.newArrayListWithCapacity(properties.size());
     for (Property property : properties) {
-      params.add(ParameterSpec.builder(property.type, property.name).build());
+      params.add(ParameterSpec.builder(property.type, property.humanName).build());
     }
 
     MethodSpec.Builder builder = MethodSpec.constructorBuilder()

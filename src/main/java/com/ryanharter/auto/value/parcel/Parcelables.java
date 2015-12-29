@@ -172,7 +172,7 @@ final class Parcelables {
     CodeBlock.Builder block = CodeBlock.builder();
 
     if (property.nullable()) {
-      block.beginControlFlow("if ($N() == null)", property.name);
+      block.beginControlFlow("if ($N() == null)", property.methodName);
       block.addStatement("$N.writeInt(1)", out);
       block.nextControlFlow("else");
       block.addStatement("$N.writeInt(0)", out);
@@ -181,63 +181,63 @@ final class Parcelables {
     TypeElement element = (TypeElement) types.asElement(property.element.getReturnType());
     final TypeName type = element != null ? getParcelableType(types, element) : property.type;
     if (type.equals(STRING))
-      block.add("$N.writeString($N())", out, property.name);
+      block.add("$N.writeString($N())", out, property.methodName);
     else if (type.equals(TypeName.BYTE))
-      block.add("$N.writeInt($N())", out, property.name);
+      block.add("$N.writeInt($N())", out, property.methodName);
     else if (type.equals(TypeName.INT))
-      block.add("$N.writeInt($N())", out, property.name);
+      block.add("$N.writeInt($N())", out, property.methodName);
     else if (type.equals(TypeName.SHORT))
-      block.add("$N.writeInt(((Short) $N()).intValue())", out, property.name);
+      block.add("$N.writeInt(((Short) $N()).intValue())", out, property.methodName);
     else if (type.equals(TypeName.LONG))
-      block.add("$N.writeLong($N())", out, property.name);
+      block.add("$N.writeLong($N())", out, property.methodName);
     else if (type.equals(TypeName.FLOAT))
-      block.add("$N.writeFloat($N())", out, property.name);
+      block.add("$N.writeFloat($N())", out, property.methodName);
     else if (type.equals(TypeName.DOUBLE))
-      block.add("$N.writeDouble($N())", out, property.name);
+      block.add("$N.writeDouble($N())", out, property.methodName);
     else if (type.equals(TypeName.BOOLEAN))
-      block.add("$N.writeInt($N() ? 1 : 0)", out, property.name);
+      block.add("$N.writeInt($N() ? 1 : 0)", out, property.methodName);
     else if (type.equals(PARCELABLE))
-      block.add("$N.writeParcelable($N(), 0)", out, property.name);
+      block.add("$N.writeParcelable($N(), 0)", out, property.methodName);
     else if (type.equals(CHARSEQUENCE))
-      block.add("$N.writeCharSequence($N())", out, property.name);
+      block.add("$N.writeCharSequence($N())", out, property.methodName);
     else if (type.equals(MAP))
-      block.add("$N.writeMap($N())", out, property.name);
+      block.add("$N.writeMap($N())", out, property.methodName);
     else if (type.equals(LIST))
-      block.add("$N.writeList($N())", out, property.name);
+      block.add("$N.writeList($N())", out, property.methodName);
     else if (type.equals(BOOLEANARRAY))
-      block.add("$N.writeBooleanArray($N())", out, property.name);
+      block.add("$N.writeBooleanArray($N())", out, property.methodName);
     else if (type.equals(BYTEARRAY))
-      block.add("$N.writeByteArray($N())", out, property.name);
+      block.add("$N.writeByteArray($N())", out, property.methodName);
     else if (type.equals(STRINGARRAY))
-      block.add("$N.writeStringArray($N())", out, property.name);
+      block.add("$N.writeStringArray($N())", out, property.methodName);
     else if (type.equals(CHARSEQUENCEARRAY))
-      block.add("$N.writeCharSequenceArray($N())", out, property.name);
+      block.add("$N.writeCharSequenceArray($N())", out, property.methodName);
     else if (type.equals(IBINDER))
-      block.add("$N.writeStrongBinder($N())", out, property.name);
+      block.add("$N.writeStrongBinder($N())", out, property.methodName);
     else if (type.equals(OBJECTARRAY))
-      block.add("$N.writeArray($N())", out, property.name);
+      block.add("$N.writeArray($N())", out, property.methodName);
     else if (type.equals(INTARRAY))
-      block.add("$N.writeIntArray($N())", out, property.name);
+      block.add("$N.writeIntArray($N())", out, property.methodName);
     else if (type.equals(LONGARRAY))
-      block.add("$N.writeLongArray($N())", out, property.name);
+      block.add("$N.writeLongArray($N())", out, property.methodName);
     else if (type.equals(SERIALIZABLE))
-      block.add("$N.writeSerializable($N())", out, property.name);
+      block.add("$N.writeSerializable($N())", out, property.methodName);
     else if (type.equals(PARCELABLEARRAY))
-      block.add("$N.writeParcelableArray($N())", out, property.name);
+      block.add("$N.writeParcelableArray($N())", out, property.methodName);
     else if (type.equals(SPARSEARRAY))
-      block.add("$N.writeSparseArray($N())", out, property.name);
+      block.add("$N.writeSparseArray($N())", out, property.methodName);
     else if (type.equals(SPARSEBOOLEANARRAY))
-      block.add("$N.writeSparseBooleanArray($N())", out, property.name);
+      block.add("$N.writeSparseBooleanArray($N())", out, property.methodName);
     else if (type.equals(BUNDLE))
-      block.add("$N.writeBundle($N())", out, property.name);
+      block.add("$N.writeBundle($N())", out, property.methodName);
     else if (type.equals(PERSISTABLEBUNDLE))
-      block.add("$N.writePersistableBundle($N())", out, property.name);
+      block.add("$N.writePersistableBundle($N())", out, property.methodName);
     else if (type.equals(SIZE))
-      block.add("$N.writeSize($N())", out, property.name);
+      block.add("$N.writeSize($N())", out, property.methodName);
     else if (type.equals(SIZEF))
-      block.add("$N.writeSizeF($N())", out, property.name);
+      block.add("$N.writeSizeF($N())", out, property.methodName);
     else
-      block.add("$N.writeValue($N())", out, property.name);
+      block.add("$N.writeValue($N())", out, property.methodName);
 
     block.add(";\n");
 
