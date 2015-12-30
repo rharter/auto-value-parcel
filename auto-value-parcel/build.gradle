@@ -1,5 +1,4 @@
 apply plugin: 'java'
-apply plugin: 'nebula.provided-base'
 
 sourceCompatibility = JavaVersion.VERSION_1_7
 targetCompatibility = JavaVersion.VERSION_1_7
@@ -17,7 +16,7 @@ dependencies {
     compile 'com.google.auto:auto-common:1.0-SNAPSHOT'
     compile 'org.apache.commons:commons-lang3:3.4'
     compile 'com.google.auto.service:auto-service:1.0-rc2'
-    provided project(':adapter')
+    compile project(':adapter')
 
     testCompile 'junit:junit:4.11'
     testCompile 'com.google.truth:truth:0.27'
