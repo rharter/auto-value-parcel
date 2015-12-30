@@ -21,7 +21,8 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
  * </pre>
  *
  * The generated code will instantiate and use the {@code DateTypeAdapter} class to parcel and
- * unparcel the {@code date()} property.
+ * unparcel the {@code date()} property. In order for the generated code to instantiate the
+ * {@link TypeAdapter}, it needs a public, no-arg constructor.
  */
 @Target(METHOD)
 @Retention(SOURCE)

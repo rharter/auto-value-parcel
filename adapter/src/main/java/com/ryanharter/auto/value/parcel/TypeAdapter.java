@@ -5,12 +5,12 @@ import android.os.Parcel;
 /**
  * Converts Java objects to and from Parcels.
  *
- * By default the AutoValue: Parcel Extension can parcel and unparcel data types known by
+ * <p>By default the AutoValue: Parcel Extension can parcel and unparcel data types known by
  * the {@link Parcel} class.  To support other types, like custom classes or other objects,
  * like {@link java.util.Date} objects or booleans, you can create a custom TypeAdapter to
  * tell the Parcel extension how to parcel the object.
  *
- * Here's an example TypeAdapter for a Date object:
+ * <p>Here's an example TypeAdapter for a Date object:
  *
  * <pre>
  * <code>

@@ -27,7 +27,7 @@ Now build your project and enjoy your Parcelable Foo.
 
 Out of the box AutoValue: Parcel Extension support all of the types supported by the 
 [Parcel](https://developer.android.com/reference/android/os/Parcel.html) class, but sometimes you
-may need to parcel other types, like booleans or Dates.  You can do this using a custom TypeAdapter.
+may need to parcel other types, like SparseArray or ArrayMap.  You can do this using a custom TypeAdapter.
 
 TypeAdapter allows you to define custom de/serialization logic for properties by allowing you to
 parcel and unparcel those properties manually.
