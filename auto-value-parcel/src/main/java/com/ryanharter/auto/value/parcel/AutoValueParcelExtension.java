@@ -5,6 +5,7 @@ import com.google.auto.common.MoreTypes;
 import com.google.auto.service.AutoService;
 import com.google.auto.value.extension.AutoValueExtension;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -14,21 +15,25 @@ import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.NameAllocator;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
@@ -43,6 +48,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     final ExecutableElement element;
     final TypeName type;
     final ImmutableSet<String> annotations;
+    TypeMirror typeAdapter;
 
     public Property(String humanName, ExecutableElement element) {
       this.methodName = element.getSimpleName().toString();
@@ -50,6 +56,15 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
       this.element = element;
       type = TypeName.get(element.getReturnType());
       annotations = buildAnnotations(element);
+
+      ParcelAdapter parcelAdapter = element.getAnnotation(ParcelAdapter.class);
+      if (parcelAdapter != null) {
+        try {
+          parcelAdapter.value();
+        } catch (MirroredTypeException e) {
+          typeAdapter = e.getTypeMirror();
+        }
+      }
     }
 
     public Boolean nullable() {
@@ -133,6 +148,9 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
   private void validateProperties(ProcessingEnvironment env, List<Property> properties) {
     Types typeUtils = env.getTypeUtils();
     for (Property property : properties) {
+      if (property.typeAdapter != null) {
+        continue;
+      }
       TypeMirror type = property.element.getReturnType();
       if (type.getKind() == TypeKind.ARRAY) {
         ArrayType aType = (ArrayType) type;
@@ -158,7 +176,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
         .addParameters(params);
 
     StringBuilder superFormat = new StringBuilder("super(");
-    List<ParameterSpec> args = new ArrayList<ParameterSpec>();
+    List<ParameterSpec> args = new ArrayList<>();
     for (int i = 0, n = params.size(); i < n; i++) {
       args.add(params.get(i));
       superFormat.append("$N");
@@ -174,13 +192,19 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     ClassName creator = ClassName.bestGuess("android.os.Parcelable.Creator");
     TypeName creatorOfClass = ParameterizedTypeName.get(creator, type);
 
+    ImmutableMap<Property, FieldSpec> typeAdapters = getTypeAdapters(properties);
     Types typeUtils = env.getTypeUtils();
     CodeBlock.Builder ctorCall = CodeBlock.builder();
     ctorCall.add("return new $T(\n", type);
     ctorCall.indent().indent();
     boolean requiresClassLoader = false;
     for (int i = 0, n = properties.size(); i < n; i++) {
-      requiresClassLoader |= Parcelables.appendReadValue(ctorCall, properties.get(i), typeUtils);
+      Property property = properties.get(i);
+      if (typeAdapters.containsKey(property)) {
+        ctorCall.add("$N.fromParcel(in)", typeAdapters.get(property));
+      } else {
+        requiresClassLoader |= Parcelables.appendReadValue(ctorCall, property, typeUtils);
+      }
 
       if (i < n - 1) ctorCall.add(",");
       ctorCall.add("\n");
@@ -195,6 +219,9 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
         .addParameter(ClassName.bestGuess("android.os.Parcel"), "in");
     if (requiresClassLoader) {
       createFromParcel.addStatement("$T cl = $T.class.getClassLoader()", ClassLoader.class, type);
+    }
+    for (FieldSpec field : typeAdapters.values()) {
+      createFromParcel.addStatement("$T $N = new $T()", field.type, field, field.type);
     }
     createFromParcel.addCode(ctorCall.build());
 
@@ -228,12 +255,36 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
         .addParameter(dest)
         .addParameter(int.class, "flags");
 
+    ImmutableMap<Property, FieldSpec> typeAdapters = getTypeAdapters(properties);
+    for (FieldSpec field : typeAdapters.values()) {
+      builder.addStatement("$T $N = new $T()", field.type, field, field.type);
+    }
+
     Types typeUtils = env.getTypeUtils();
     for (Property p : properties) {
-      builder.addCode(Parcelables.writeValue(typeUtils, p, dest));
+      if (typeAdapters.containsKey(p)) {
+        builder.addStatement("$N.toParcel($N(), $N)", typeAdapters.get(p), p.methodName, dest);
+      } else {
+        builder.addCode(Parcelables.writeValue(typeUtils, p, dest));
+      }
     }
 
     return builder.build();
+  }
+
+  private ImmutableMap<Property, FieldSpec> getTypeAdapters(List<Property> properties) {
+    Map<Property, FieldSpec> typeAdapters = new HashMap<>();
+    for (Property property : properties) {
+      if (property.typeAdapter != null && !typeAdapters.containsKey(property)) {
+        ClassName typeName = (ClassName) TypeName.get(property.typeAdapter);
+        String name = Character.toLowerCase(typeName.simpleName().charAt(0))
+            + typeName.simpleName().substring(1);
+
+        typeAdapters.put(property, FieldSpec.builder(
+            typeName, NameAllocator.toJavaIdentifier(name)).build());
+      }
+    }
+    return ImmutableMap.copyOf(typeAdapters);
   }
 
   MethodSpec generateDescribeContents() {
