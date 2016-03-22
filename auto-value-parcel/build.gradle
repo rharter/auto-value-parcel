@@ -12,8 +12,8 @@ repositories {
 
 dependencies {
     compile 'com.squareup:javapoet:1.4.0'
-    compile 'com.google.auto.value:auto-value:1.2-SNAPSHOT'
-    compile 'com.google.auto:auto-common:1.0-SNAPSHOT'
+    compile 'com.google.auto.value:auto-value:1.2-rc1'
+    compile 'com.google.auto:auto-common:0.6'
     compile 'org.apache.commons:commons-lang3:3.4'
     compile 'com.google.auto.service:auto-service:1.0-rc2'
     compile project(':adapter')
