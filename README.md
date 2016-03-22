@@ -45,7 +45,7 @@ Once you've defined your custom TypeAdapter, using it on an AutoValue class is a
 the `ParcelAdapter` annotation to any property you'd like to be serialized with your TypeAdapter.
 
 ```java
-@AutoValue public abstract class Foo extends Parcelable {
+@AutoValue public abstract class Foo implements Parcelable {
   @ParcelAdapter(DateTypeAdapter.class) public abstract Date date();
 }
 ```
