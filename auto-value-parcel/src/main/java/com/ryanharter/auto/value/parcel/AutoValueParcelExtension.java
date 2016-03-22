@@ -220,7 +220,8 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     if (requiresClassLoader) {
       createFromParcel.addStatement("$T cl = $T.class.getClassLoader()", ClassLoader.class, type);
     }
-    for (FieldSpec field : typeAdapters.values()) {
+    ImmutableSet<FieldSpec> adapters = ImmutableSet.copyOf(typeAdapters.values());
+    for (FieldSpec field : adapters) {
       createFromParcel.addStatement("$T $N = new $T()", field.type, field, field.type);
     }
     createFromParcel.addCode(ctorCall.build());
@@ -256,7 +257,8 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
         .addParameter(int.class, "flags");
 
     ImmutableMap<Property, FieldSpec> typeAdapters = getTypeAdapters(properties);
-    for (FieldSpec field : typeAdapters.values()) {
+    ImmutableSet<FieldSpec> adapters = ImmutableSet.copyOf(typeAdapters.values());
+    for (FieldSpec field : adapters) {
       builder.addStatement("$T $N = new $T()", field.type, field, field.type);
     }
 
