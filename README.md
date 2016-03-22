@@ -5,9 +5,6 @@
 An extension for Google's [AutoValue](https://github.com/google/auto) that supports Android's 
 Parcelable interface.
 
-**Note**: This is an early version that requires the extension support currently in AutoValue 
-1.2-SNAPSHOT.
-
 ## Usage
 
 Simply include the AutoValue: Parcel Extension in your project and make any of your `@AutoValue` 
@@ -65,10 +62,10 @@ compile 'com.ryanharter.auto.value:auto-value-parcel-adapter:0.2-SNAPSHOT'
 Add a Gradle dependency:
 
 ```groovy
-apt 'com.ryanharter.auto.value:auto-value-parcel:0.2-SNAPSHOT'
+apt 'com.ryanharter.auto.value:auto-value-parcel:0.2'
 
 // Optionally for TypeAdapter support
-compile 'com.ryanharter.auto.value:auto-value-parcel-adapter:0.2-SNAPSHOT'
+compile 'com.ryanharter.auto.value:auto-value-parcel-adapter:0.2'
 ```
 
 (Using the [android-apt](https://bitbucket.org/hvisser/android-apt) plugin)
