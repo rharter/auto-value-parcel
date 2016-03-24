@@ -68,9 +68,9 @@ final class Parcelables {
 
       // then check if it implements valid interfaces
       for (TypeMirror iface : type.getInterfaces()) {
-        TypeName ifaceName = TypeName.get(iface);
-        if (VALID_TYPES.contains(ifaceName)) {
-          return ifaceName;
+        TypeName inherited = getParcelableType(types, (TypeElement) types.asElement(iface));
+        if (inherited != null) {
+          return inherited;
         }
       }
 

@@ -753,6 +753,74 @@ public class AutoValueParcelExtensionTest {
         .generatesSources(expected);
   }
 
+  @Test public void acceptsParcelableSubclassesTwiceRemoved() throws Exception {
+    JavaFileObject source1 = JavaFileObjects.forSourceString("test.SafeParcelable", ""
+        + "package test;\n"
+        + "import android.os.Parcelable;\n"
+        + "public interface SafeParcelable extends Parcelable {\n"
+        + "}");
+    JavaFileObject source2 = JavaFileObjects.forSourceString("test.Param", ""
+        + "package test;\n"
+        + "import android.os.Parcel;\n"
+        + "public class Param implements SafeParcelable {\n"
+        + "  public int describeContents() { return 0; }\n"
+        + "  public void writeToParcel(Parcel p, int i) {}\n"
+        + "  public static final Creator<Param> CREATOR = null;\n"
+        + "}\n");
+    JavaFileObject source3 = JavaFileObjects.forSourceString("test.Foo", ""
+        + "package test;\n"
+        + "import android.os.Parcelable;\n"
+        + "import com.google.auto.value.AutoValue;\n"
+        + "@AutoValue public abstract class Foo implements Parcelable {\n"
+        + "  public abstract Param param();\n"
+        + "}\n");
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test/AutoValue_Foo", ""
+        + "package test;\n"
+        + "\n"
+        + "import android.os.Parcel;\n"
+        + "import android.os.Parcelable;\n"
+        + "import java.lang.ClassLoader;\n"
+        + "import java.lang.Override;\n"
+        + "\n"
+        + "final class AutoValue_Foo extends $AutoValue_Foo {\n"
+        + "  public static final Parcelable.Creator<AutoValue_Foo> CREATOR = new Parcelable.Creator<AutoValue_Foo>() {\n"
+        + "    @Override\n"
+        + "    public AutoValue_Foo createFromParcel(Parcel in) {\n"
+        + "      ClassLoader cl = AutoValue_Foo.class.getClassLoader();\n"
+        + "      return new AutoValue_Foo(\n"
+        + "          (Param) in.readParcelable(cl)\n"
+        + "      );\n"
+        + "    }\n"
+        + "    @Override\n"
+        + "    public AutoValue_Foo[] newArray(int size) {\n"
+        + "      return new AutoValue_Foo[size];\n"
+        + "    }\n"
+        + "  };\n"
+        + "\n"
+        + "  AutoValue_Foo(Param param) {\n"
+        + "    super(param);\n"
+        + "  }\n"
+        + "\n"
+        + "  @Override\n"
+        + "  public void writeToParcel(Parcel dest, int flags) {\n"
+        + "    dest.writeParcelable(param(), 0);\n"
+        + "  }\n"
+        + "\n"
+        + "  @Override\n"
+        + "  public int describeContents() {\n"
+        + "    return 0;\n"
+        + "  }\n"
+        + "}\n");
+
+    assertAbout(javaSources())
+        .that(Arrays.asList(parcelable, parcel, source1, source2, source3))
+        .processedWith(new AutoValueProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
   private AutoValueExtension.Context createContext(TypeElement type) {
     String packageName = MoreElements.getPackage(type).getQualifiedName().toString();
     Set<ExecutableElement> allMethods = MoreElements.getLocalAndInheritedMethods(type, elements);
