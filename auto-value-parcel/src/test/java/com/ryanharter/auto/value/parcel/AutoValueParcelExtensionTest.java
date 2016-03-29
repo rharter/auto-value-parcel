@@ -322,11 +322,13 @@ public class AutoValueParcelExtensionTest {
         "import android.os.Parcelable;\n" +
         "import java.lang.ClassLoader;\n" +
         "import java.lang.Override;\n" +
+        "import java.lang.SuppressWarnings;\n" +
         "import java.util.List;\n" +
         "\n" +
         "final class AutoValue_Test extends $AutoValue_Test {\n" +
         "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = new Parcelable.Creator<AutoValue_Test>() {\n" +
         "    @Override\n" +
+        "    @SuppressWarnings(\"unchecked\")\n" +
         "    public AutoValue_Test createFromParcel(Parcel in) {\n" +
         "      ClassLoader cl = AutoValue_Test.class.getClassLoader();\n" +
         "      return new AutoValue_Test(\n" +
@@ -544,12 +546,14 @@ public class AutoValueParcelExtensionTest {
         "import java.lang.ClassLoader;\n" +
         "import java.lang.Override;\n" +
         "import java.lang.String;\n" +
+        "import java.lang.SuppressWarnings;\n" +
         "import java.util.List;\n" +
         "import java.util.Map;\n" +
         "\n" +
         "final class AutoValue_Foo extends $AutoValue_Foo {\n" +
         "  public static final Parcelable.Creator<AutoValue_Foo> CREATOR = new Parcelable.Creator<AutoValue_Foo>() {\n" +
         "    @Override\n" +
+        "    @SuppressWarnings(\"unchecked\")\n" +
         "    public AutoValue_Foo createFromParcel(Parcel in) {\n" +
         "      ClassLoader cl = AutoValue_Foo.class.getClassLoader();\n" +
         "      return new AutoValue_Foo(\n" +
@@ -822,6 +826,252 @@ public class AutoValueParcelExtensionTest {
         .compilesWithoutError()
         .and()
         .generatesSources(expected);
+  }
+
+  @Test public void addsSuppressWarningsAnnotationWhenListFieldExists() {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Test", ""
+            + "package test;\n"
+            + "import android.os.Parcelable;\n"
+            + "import com.google.auto.value.AutoValue;\n"
+            + "import java.util.List;\n"
+            + "@AutoValue public abstract class Test implements Parcelable {\n"
+            + "public abstract List<String> a();\n"
+            + "}"
+    );
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test/AutoValue_Test", ""
+            + "package test;\n" +
+            "\n" +
+            "import android.os.Parcel;\n" +
+            "import android.os.Parcelable;\n" +
+            "import java.lang.ClassLoader;\n" +
+            "import java.lang.Override;\n" +
+            "import java.lang.String;\n" +
+            "import java.lang.SuppressWarnings;\n" +
+            "import java.util.List;\n" +
+            "\n" +
+            "final class AutoValue_Test extends $AutoValue_Test {\n" +
+            "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = new Parcelable.Creator<AutoValue_Test>() {\n" +
+            "    @Override\n" +
+            "    @SuppressWarnings(\"unchecked\")\n" +
+            "    public AutoValue_Test createFromParcel(Parcel in) {\n" +
+            "      ClassLoader cl = AutoValue_Test.class.getClassLoader();\n" +
+            "      return new AutoValue_Test(\n" +
+            "          (List<String>) in.readArrayList(cl)\n" +
+            "      );\n" +
+            "    }\n" +
+            "    @Override\n" +
+            "    public AutoValue_Test[] newArray(int size) {\n" +
+            "      return new AutoValue_Test[size];\n" +
+            "    }\n" +
+            "  };\n" +
+            "\n" +
+            "  AutoValue_Test(List<String> a) {\n" +
+            "    super(a);\n" +
+            "  }\n" +
+            "\n" +
+            "  @Override\n" +
+            "  public void writeToParcel(Parcel dest, int flags) {\n" +
+            "    dest.writeList(a());\n" +
+            "  }\n" +
+            "\n" +
+            "  @Override\n" +
+            "  public int describeContents() {\n" +
+            "    return 0;\n" +
+            "  }\n" +
+            "}");
+
+    assertAbout(javaSources())
+            .that(Arrays.asList(parcel, parcelable, source))
+            .processedWith(new AutoValueProcessor())
+            .compilesWithoutError()
+            .and()
+            .generatesSources(expected);
+  }
+
+  @Test public void addsSuppressWarningsAnnotationWhenMapFieldExists() {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Test", ""
+            + "package test;\n"
+            + "import android.os.Parcelable;\n"
+            + "import com.google.auto.value.AutoValue;\n"
+            + "import java.util.Map;\n"
+            + "@AutoValue public abstract class Test implements Parcelable {\n"
+            + "public abstract Map<String, String> a();\n"
+            + "}"
+    );
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test/AutoValue_Test", ""
+            + "package test;\n" +
+            "\n" +
+            "import android.os.Parcel;\n" +
+            "import android.os.Parcelable;\n" +
+            "import java.lang.ClassLoader;\n" +
+            "import java.lang.Override;\n" +
+            "import java.lang.String;\n" +
+            "import java.lang.SuppressWarnings;\n" +
+            "import java.util.Map;\n" +
+            "\n" +
+            "final class AutoValue_Test extends $AutoValue_Test {\n" +
+            "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = new Parcelable.Creator<AutoValue_Test>() {\n" +
+            "    @Override\n" +
+            "    @SuppressWarnings(\"unchecked\")\n" +
+            "    public AutoValue_Test createFromParcel(Parcel in) {\n" +
+            "      ClassLoader cl = AutoValue_Test.class.getClassLoader();\n" +
+            "      return new AutoValue_Test(\n" +
+            "          (Map<String, String>) in.readHashMap(cl)\n" +
+            "      );\n" +
+            "    }\n" +
+            "    @Override\n" +
+            "    public AutoValue_Test[] newArray(int size) {\n" +
+            "      return new AutoValue_Test[size];\n" +
+            "    }\n" +
+            "  };\n" +
+            "\n" +
+            "  AutoValue_Test(Map<String, String> a) {\n" +
+            "    super(a);\n" +
+            "  }\n" +
+            "\n" +
+            "  @Override\n" +
+            "  public void writeToParcel(Parcel dest, int flags) {\n" +
+            "    dest.writeMap(a());\n" +
+            "  }\n" +
+            "\n" +
+            "  @Override\n" +
+            "  public int describeContents() {\n" +
+            "    return 0;\n" +
+            "  }\n" +
+            "}");
+
+    assertAbout(javaSources())
+            .that(Arrays.asList(parcel, parcelable, source))
+            .processedWith(new AutoValueProcessor())
+            .compilesWithoutError()
+            .and()
+            .generatesSources(expected);
+  }
+
+  @Test public void doesNotAddSuppressWarningsAnnotationWithoutMapOrList() {
+
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Test", ""
+            + "package test;\n"
+            + "import android.os.Parcelable;\n"
+            + "import com.google.auto.value.AutoValue;\n"
+            + "import java.lang.CharSequence;\n"
+            + "import android.os.IBinder;\n"
+            + "import java.io.Serializable;\n"
+            + "import android.util.Size;\n"
+            + "import android.util.SizeF;\n"
+            + "import android.os.PersistableBundle;\n"
+
+            + "@AutoValue public abstract class Test implements Parcelable {\n"
+            + "public abstract byte a();\n"
+            + "public abstract int b();\n"
+            + "public abstract short c();\n"
+            + "public abstract long d();\n"
+            + "public abstract float e();\n"
+            + "public abstract double f();\n"
+            + "public abstract CharSequence g();\n"
+            + "public abstract IBinder i();\n"
+            + "public abstract String j();\n"
+            + "public abstract boolean k();\n"
+            + "public abstract boolean[] l();\n"
+            + "public abstract byte[] m();\n"
+            + "public abstract int[] o();\n"
+            + "public abstract long[] p();\n"
+            + "public abstract Serializable q();\n"
+            + "public abstract Size s();\n"
+            + "public abstract SizeF t();\n"
+            + "public abstract PersistableBundle u();\n"
+
+            + "}"
+    );
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test/AutoValue_Test", ""
+            +  "package test;\n" +
+            "\n" +
+            "import android.os.IBinder;\n" +
+            "import android.os.Parcel;\n" +
+            "import android.os.Parcelable;\n" +
+            "import android.os.PersistableBundle;\n" +
+            "import android.util.Size;\n" +
+            "import android.util.SizeF;\n" +
+            "import java.io.Serializable;\n" +
+            "import java.lang.CharSequence;\n" +
+            "import java.lang.ClassLoader;\n" +
+            "import java.lang.Override;\n" +
+            "import java.lang.String;\n" +
+            "\n" +
+            "final class AutoValue_Test extends $AutoValue_Test {\n" +
+            "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = new Parcelable.Creator<AutoValue_Test>() {\n" +
+            "    @Override\n" +
+            "    public AutoValue_Test createFromParcel(Parcel in) {\n" +
+            "      ClassLoader cl = AutoValue_Test.class.getClassLoader();\n" +
+            "      return new AutoValue_Test(\n" +
+            "          in.readByte(),\n" +
+            "          in.readInt(),\n" +
+            "          (short) in.readInt(),\n" +
+            "          in.readLong(),\n" +
+            "          in.readFloat(),\n" +
+            "          in.readDouble(),\n" +
+            "          (CharSequence) in.readCharSequence(),\n" +
+            "          (IBinder) in.readStrongBinder(),\n" +
+            "          in.readString(),\n" +
+            "          in.readInt() == 1,\n" +
+            "          in.createBooleanArray(),\n" +
+            "          in.createByteArray(),\n" +
+            "          in.createIntArray(),\n" +
+            "          in.createLongArray(),\n" +
+            "          (Serializable) in.readSerializable(),\n" +
+            "          in.readSize(),\n" +
+            "          in.readSizeF(),\n" +
+            "          in.readPersistableBundle(cl)\n" +
+            "      );\n" +
+            "    }\n" +
+            "    @Override\n" +
+            "    public AutoValue_Test[] newArray(int size) {\n" +
+            "      return new AutoValue_Test[size];\n" +
+            "    }\n" +
+            "  };\n" +
+            "\n" +
+            "  AutoValue_Test(byte a, int b, short c, long d, float e, double f, CharSequence g, IBinder i, String j, boolean k, boolean[] l, byte[] m, int[] o, long[] p, Serializable q, Size s, SizeF t, PersistableBundle u) {\n" +
+            "    super(a, b, c, d, e, f, g, i, j, k, l, m, o, p, q, s, t, u);\n" +
+            "  }\n" +
+            "\n" +
+            "  @Override\n" +
+            "  public void writeToParcel(Parcel dest, int flags) {\n" +
+            "    dest.writeInt(a());\n" +
+            "    dest.writeInt(b());\n" +
+            "    dest.writeInt(((Short) c()).intValue());\n" +
+            "    dest.writeLong(d());\n" +
+            "    dest.writeFloat(e());\n" +
+            "    dest.writeDouble(f());\n" +
+            "    dest.writeCharSequence(g());\n" +
+            "    dest.writeStrongBinder(i());\n" +
+            "    dest.writeString(j());\n" +
+            "    dest.writeInt(k() ? 1 : 0);\n" +
+            "    dest.writeBooleanArray(l());\n" +
+            "    dest.writeByteArray(m());\n" +
+            "    dest.writeIntArray(o());\n" +
+            "    dest.writeLongArray(p());\n" +
+            "    dest.writeSerializable(q());\n" +
+            "    dest.writeSize(s());\n" +
+            "    dest.writeSizeF(t());\n" +
+            "    dest.writePersistableBundle(u());\n" +
+            "  }\n" +
+            "\n" +
+            "  @Override\n" +
+            "  public int describeContents() {\n" +
+            "    return 0;\n" +
+            "  }\n" +
+            "}");
+
+    assertAbout(javaSources())
+            .that(Arrays.asList(parcel, parcelable, source))
+            .processedWith(new AutoValueProcessor())
+            .compilesWithoutError()
+            .and()
+            .generatesSources(expected);
+
   }
 
   private AutoValueExtension.Context createContext(TypeElement type) {

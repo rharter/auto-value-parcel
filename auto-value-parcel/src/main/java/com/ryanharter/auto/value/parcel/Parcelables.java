@@ -13,9 +13,6 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 
-/**
- * Created by rharter on 10/20/15.
- */
 final class Parcelables {
 
   private static final TypeName STRING = ClassName.get("java.lang", "String");
@@ -82,16 +79,11 @@ final class Parcelables {
   }
 
   /** Returns true if the code added to {@code block} requires a {@code ClassLoader cl} local. */
-  static boolean appendReadValue(CodeBlock.Builder block, AutoValueParcelExtension.Property property,
-      Types types) {
+  static void appendReadValue(CodeBlock.Builder block, AutoValueParcelExtension.Property property, final TypeName type) {
     if (property.nullable()){
       block.add("in.readInt() == 0 ? ");
     }
 
-    TypeElement element = (TypeElement) types.asElement(property.element.getReturnType());
-    TypeName type = element != null ? getParcelableType(types, element) : property.type;
-
-    boolean requiresClassLoader = false;
     if (type.equals(STRING)) {
       block.add("in.readString()");
     } else if (type.equals(TypeName.BYTE)) {
@@ -110,15 +102,12 @@ final class Parcelables {
       block.add("in.readInt() == 1");
     } else if (type.equals(PARCELABLE)) {
       block.add("($T) in.readParcelable(cl)", property.type);
-      requiresClassLoader = true;
     } else if (type.equals(CHARSEQUENCE)) {
       block.add("($T) in.readCharSequence()", property.type);
     } else if (type.equals(MAP)) {
       block.add("($T) in.readHashMap(cl)", property.type);
-      requiresClassLoader = true;
     } else if (type.equals(LIST)) {
       block.add("($T) in.readArrayList(cl)", property.type);
-      requiresClassLoader = true;
     } else if (type.equals(BOOLEANARRAY)) {
       block.add("in.createBooleanArray()");
     } else if (type.equals(BYTEARRAY)) {
@@ -131,7 +120,6 @@ final class Parcelables {
       block.add("($T) in.readStrongBinder()", property.type);
     } else if (type.equals(OBJECTARRAY)) {
       block.add("in.readArray(cl)");
-      requiresClassLoader = true;
     } else if (type.equals(INTARRAY)) {
       block.add("in.createIntArray()");
     } else if (type.equals(LONGARRAY)) {
@@ -140,32 +128,25 @@ final class Parcelables {
       block.add("($T) in.readSerializable()", property.type);
     } else if (type.equals(PARCELABLEARRAY)) {
       block.add("($T) in.readParcelableArray(cl)", property.type);
-      requiresClassLoader = true;
     } else if (type.equals(SPARSEARRAY)) {
       block.add("in.readSparseArray(cl)");
-      requiresClassLoader = true;
     } else if (type.equals(SPARSEBOOLEANARRAY)) {
       block.add("in.readSparseBooleanArray()");
     } else if (type.equals(BUNDLE)) {
       block.add("in.readBundle(cl)");
-      requiresClassLoader = true;
     } else if (type.equals(PERSISTABLEBUNDLE)) {
       block.add("in.readPersistableBundle(cl)");
-      requiresClassLoader = true;
     } else if (type.equals(SIZE)) {
       block.add("in.readSize()");
     } else if (type.equals(SIZEF)) {
       block.add("in.readSizeF()");
     } else {
       block.add("($T) in.readValue(cl)", property.type);
-      requiresClassLoader = true;
     }
 
     if (property.nullable()){
       block.add(" : null");
     }
-
-    return requiresClassLoader;
   }
 
   public static CodeBlock writeValue(Types types, AutoValueParcelExtension.Property property, ParameterSpec out) {
@@ -178,8 +159,8 @@ final class Parcelables {
       block.addStatement("$N.writeInt(0)", out);
     }
 
-    TypeElement element = (TypeElement) types.asElement(property.element.getReturnType());
-    final TypeName type = element != null ? getParcelableType(types, element) : property.type;
+    final TypeName type = getTypeNameFromProperty(property, types);
+
     if (type.equals(STRING))
       block.add("$N.writeString($N())", out, property.methodName);
     else if (type.equals(TypeName.BYTE))
@@ -246,5 +227,38 @@ final class Parcelables {
     }
 
     return block.build();
+  }
+
+  static TypeName getTypeNameFromProperty(AutoValueParcelExtension.Property property, Types types) {
+    TypeElement element = (TypeElement) types.asElement(property.element.getReturnType());
+    return element != null ? getParcelableType(types, element) : property.type;
+  }
+
+  static boolean isTypeRequiresClassLoader(final TypeName type) {
+    return !(type.equals(STRING) ||
+            type.equals(TypeName.BYTE) ||
+            type.equals(TypeName.INT) ||
+            type.equals(TypeName.SHORT) ||
+            type.equals(TypeName.LONG) ||
+            type.equals(TypeName.FLOAT) ||
+            type.equals(TypeName.DOUBLE) ||
+            type.equals(TypeName.BOOLEAN) ||
+            type.equals(CHARSEQUENCE) ||
+            type.equals(BOOLEANARRAY) ||
+            type.equals(BYTEARRAY) ||
+            type.equals(STRINGARRAY) ||
+            type.equals(CHARSEQUENCEARRAY) ||
+            type.equals(IBINDER) ||
+            type.equals(INTARRAY) ||
+            type.equals(LONGARRAY) ||
+            type.equals(SERIALIZABLE) ||
+            type.equals(SPARSEBOOLEANARRAY) ||
+            type.equals(SIZE) ||
+            type.equals(SIZEF));
+  }
+
+  static boolean isTypeRequiresSuppressWarnings(TypeName type) {
+    return type.equals(LIST) ||
+            type.equals(MAP);
   }
 }

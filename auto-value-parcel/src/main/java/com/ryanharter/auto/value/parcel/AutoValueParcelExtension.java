@@ -9,6 +9,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -28,7 +29,6 @@ import java.util.Map;
 import java.util.Set;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
@@ -198,12 +198,16 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     ctorCall.add("return new $T(\n", type);
     ctorCall.indent().indent();
     boolean requiresClassLoader = false;
+    boolean requiresSuppressWarnings = false;
     for (int i = 0, n = properties.size(); i < n; i++) {
       Property property = properties.get(i);
       if (typeAdapters.containsKey(property)) {
         ctorCall.add("$N.fromParcel(in)", typeAdapters.get(property));
       } else {
-        requiresClassLoader |= Parcelables.appendReadValue(ctorCall, property, typeUtils);
+        final TypeName typeName = Parcelables.getTypeNameFromProperty(property, typeUtils);
+        requiresClassLoader |= Parcelables.isTypeRequiresClassLoader(typeName);
+        requiresSuppressWarnings |= Parcelables.isTypeRequiresSuppressWarnings(typeName);
+        Parcelables.appendReadValue(ctorCall, property, typeName);
       }
 
       if (i < n - 1) ctorCall.add(",");
@@ -213,7 +217,11 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     ctorCall.add(");\n");
 
     MethodSpec.Builder createFromParcel = MethodSpec.methodBuilder("createFromParcel")
-        .addAnnotation(Override.class)
+        .addAnnotation(Override.class);
+    if (requiresSuppressWarnings) {
+      createFromParcel.addAnnotation(createSuppressUncheckedWarningAnnotation());
+    }
+    createFromParcel
         .addModifiers(Modifier.PUBLIC)
         .returns(type)
         .addParameter(ClassName.bestGuess("android.os.Parcel"), "in");
@@ -274,6 +282,11 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     return builder.build();
   }
 
+  private static AnnotationSpec createSuppressUncheckedWarningAnnotation() {
+    return AnnotationSpec.builder(SuppressWarnings.class)
+      .addMember("value", "\"unchecked\"")
+      .build();
+  }
   private ImmutableMap<Property, FieldSpec> getTypeAdapters(List<Property> properties) {
     Map<Property, FieldSpec> typeAdapters = new HashMap<>();
     for (Property property : properties) {
