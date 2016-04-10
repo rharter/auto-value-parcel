@@ -8,6 +8,7 @@ import com.google.auto.value.processor.AutoValueProcessor;
 import com.google.common.collect.ImmutableSet;
 import com.google.testing.compile.CompilationRule;
 import com.google.testing.compile.JavaFileObjects;
+import com.ryanharter.auto.value.parcel.model.SampleTypeWithParcelableContractSatisfied;
 import com.ryanharter.auto.value.parcel.util.TestMessager;
 import com.ryanharter.auto.value.parcel.util.TestProcessingEnvironment;
 
@@ -32,6 +33,7 @@ import javax.tools.JavaFileObject;
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 public class AutoValueParcelExtensionTest {
@@ -384,9 +386,9 @@ public class AutoValueParcelExtensionTest {
         + "import com.google.auto.value.AutoValue;\n"
         + "@AutoValue public abstract class Yes implements Parcelable {\n"
         + "  public abstract String name();\n"
-        + "public int describeContents() {\n"
-        + "  return 0;\n"
-        + "}\n"
+        + "  public int describeContents() {\n"
+        + "    return 0;\n"
+        + "  }\n"
         + "}"
     );
 
@@ -465,6 +467,224 @@ public class AutoValueParcelExtensionTest {
         .compilesWithoutError()
         .and()
         .generatesSources(expectedNotMatching, expectedMatching);
+  }
+
+  @Test public void writeToParcelOmittedWhenAlreadyDefined() {
+    JavaFileObject notMatching = JavaFileObjects.forSourceString("test.No", ""
+            + "package test;\n"
+            + "import android.os.Parcel;\n"
+            + "import android.os.Parcelable;\n"
+            + "import com.google.auto.value.AutoValue;\n"
+            + "@AutoValue public abstract class No implements Parcelable {\n"
+            + "  public abstract String name();\n"
+            + "  @Override public abstract void writeToParcel(Parcel parcel, int flags);\n"
+            + "  public void writeToParcel(Parcel parcel) {\n"
+            + "  }\n"
+            + "}");
+    JavaFileObject matching = JavaFileObjects.forSourceString("test.Yes", ""
+            + "package test;\n"
+            + "import android.os.Parcel;\n"
+            + "import android.os.Parcelable;\n"
+            + "import com.google.auto.value.AutoValue;\n"
+            + "@AutoValue public abstract class Yes implements Parcelable {\n"
+            + "  public abstract String name();\n"
+            + "  public void writeToParcel(Parcel parcel, int flags) {\n"
+            + "  }\n"
+            + "}"
+    );
+
+    JavaFileObject expectedNotMatching = JavaFileObjects.forSourceString("test/AutoValue_No", ""
+            + "package test;\n" +
+            "\n" +
+            "import android.os.Parcel;\n" +
+            "import android.os.Parcelable;\n" +
+            "import java.lang.Override;\n" +
+            "import java.lang.String;\n" +
+            "\n" +
+            "final class AutoValue_No extends $AutoValue_No {\n" +
+            "  public static final Parcelable.Creator<AutoValue_No> CREATOR = new Parcelable.Creator<AutoValue_No>() {\n" +
+            "    @Override\n" +
+            "    public AutoValue_No createFromParcel(Parcel in) {\n" +
+            "      return new AutoValue_No(\n" +
+            "        in.readString()\n" +
+            "      );\n" +
+            "    }\n" +
+            "    @Override\n" +
+            "    public AutoValue_No[] newArray(int size) {\n" +
+            "      return new AutoValue_No[size];\n" +
+            "    }\n" +
+            "  };\n" +
+            "\n" +
+            "  AutoValue_No(String name) {\n" +
+            "    super(name);\n" +
+            "  }\n" +
+            "\n" +
+            "  @Override\n" +
+            "  public void writeToParcel(Parcel dest, int flags) {\n" +
+            "    dest.writeString(name());\n" +
+            "  }\n" +
+            "\n" +
+            "  @Override\n" +
+            "  public int describeContents() {\n" +
+            "    return 0;\n" +
+            "  }\n" +
+            "}");
+
+    JavaFileObject expectedMatching = JavaFileObjects.forSourceString("test/AutoValue_Yes", ""
+            + "package test;\n" +
+            "\n" +
+            "import android.os.Parcel;\n" +
+            "import android.os.Parcelable;\n" +
+            "import java.lang.Override;\n" +
+            "import java.lang.String;\n" +
+            "\n" +
+            "final class AutoValue_Yes extends $AutoValue_Yes {\n" +
+            "  public static final Parcelable.Creator<AutoValue_Yes> CREATOR = new Parcelable.Creator<AutoValue_Yes>() {\n" +
+            "    @Override\n" +
+            "    public AutoValue_Yes createFromParcel(Parcel in) {\n" +
+            "      return new AutoValue_Yes(\n" +
+            "        in.readString()\n" +
+            "      );\n" +
+            "    }\n" +
+            "    @Override\n" +
+            "    public AutoValue_Yes[] newArray(int size) {\n" +
+            "      return new AutoValue_Yes[size];\n" +
+            "    }\n" +
+            "  };\n" +
+            "\n" +
+            "  AutoValue_Yes(String name) {\n" +
+            "    super(name);\n" +
+            "  }\n" +
+            "\n" +
+            "  @Override\n" +
+            "  public int describeContents() {\n" +
+            "    return 0;\n" +
+            "  }\n" +
+            "}");
+
+    assertAbout(javaSources())
+            .that(Arrays.asList(parcel, parcelable, notMatching, matching))
+            .processedWith(new AutoValueProcessor())
+            .compilesWithoutError()
+            .and()
+            .generatesSources(expectedNotMatching, expectedMatching);
+  }
+
+  @Test public void creatorOmittedWhenAlreadyDefined() {
+    JavaFileObject notMatching = JavaFileObjects.forSourceString("test.No", ""
+            + "package test;\n"
+            + "import android.os.Parcel;\n"
+            + "import android.os.Parcelable;\n"
+            + "import com.google.auto.value.AutoValue;\n"
+            + "@AutoValue public abstract class No implements Parcelable {\n"
+            + "  public abstract String name();\n"
+            + "  public final Parcelable.Creator<AutoValue_No> CREATOR = new Parcelable.Creator<AutoValue_No>() {\n"
+            + "    @Override\n"
+            + "    public AutoValue_No createFromParcel(Parcel in) {\n"
+            + "      return new AutoValue_No(\n"
+            + "        in.readString()\n"
+            + "      );\n"
+            + "    }\n"
+            + "    @Override\n"
+            + "    public AutoValue_No[] newArray(int size) {\n"
+            + "      return new AutoValue_No[size];\n"
+            + "    }\n"
+            + "  };\n"
+            + "}");
+    JavaFileObject matching = JavaFileObjects.forSourceString("test.Yes", ""
+            + "package test;\n"
+            + "import android.os.Parcel;\n"
+            + "import android.os.Parcelable;\n"
+            + "import com.google.auto.value.AutoValue;\n"
+            + "@AutoValue public abstract class Yes implements Parcelable {\n"
+            + "  public abstract String name();\n"
+            + "  public static final Parcelable.Creator<AutoValue_Yes> CREATOR = new Parcelable.Creator<AutoValue_Yes>() {\n"
+            + "    @Override\n"
+            + "    public AutoValue_Yes createFromParcel(Parcel in) {\n"
+            + "      return new AutoValue_Yes(\n"
+            + "        in.readString()\n"
+            + "      );\n"
+            + "    }\n"
+            + "    @Override\n"
+            + "    public AutoValue_Yes[] newArray(int size) {\n"
+            + "      return new AutoValue_Yes[size];\n"
+            + "    }\n"
+            + "  };\n"
+            + "}"
+    );
+
+    JavaFileObject expectedNotMatching = JavaFileObjects.forSourceString("test/AutoValue_No", ""
+            + "package test;\n" +
+            "\n" +
+            "import android.os.Parcel;\n" +
+            "import android.os.Parcelable;\n" +
+            "import java.lang.Override;\n" +
+            "import java.lang.String;\n" +
+            "\n" +
+            "final class AutoValue_No extends $AutoValue_No {\n" +
+            "  public static final Parcelable.Creator<AutoValue_No> CREATOR = new Parcelable.Creator<AutoValue_No>() {\n" +
+            "    @Override\n" +
+            "    public AutoValue_No createFromParcel(Parcel in) {\n" +
+            "      return new AutoValue_No(\n" +
+            "        in.readString()\n" +
+            "      );\n" +
+            "    }\n" +
+            "    @Override\n" +
+            "    public AutoValue_No[] newArray(int size) {\n" +
+            "      return new AutoValue_No[size];\n" +
+            "    }\n" +
+            "  };\n" +
+            "\n" +
+            "  AutoValue_No(String name) {\n" +
+            "    super(name);\n" +
+            "  }\n" +
+            "\n" +
+            "  @Override\n" +
+            "  public void writeToParcel(Parcel dest, int flags) {\n" +
+            "    dest.writeString(name());\n" +
+            "  }\n" +
+            "\n" +
+            "  @Override\n" +
+            "  public int describeContents() {\n" +
+            "    return 0;\n" +
+            "  }\n" +
+            "}");
+
+    JavaFileObject expectedMatching = JavaFileObjects.forSourceString("test/AutoValue_Yes", ""
+            + "package test;\n" +
+            "\n" +
+            "import android.os.Parcel;\n" +
+            "import java.lang.Override;\n" +
+            "import java.lang.String;\n" +
+            "\n" +
+            "final class AutoValue_Yes extends $AutoValue_Yes {\n" +
+            "  AutoValue_Yes(String name) {\n" +
+            "    super(name);\n" +
+            "  }\n" +
+            "\n" +
+            "  @Override\n" +
+            "  public void writeToParcel(Parcel dest, int flags) {\n" +
+            "    dest.writeString(name());\n" +
+            "  }\n" +
+            "\n" +
+            "  @Override\n" +
+            "  public int describeContents() {\n" +
+            "    return 0;\n" +
+            "  }\n" +
+            "}");
+
+    assertAbout(javaSources())
+            .that(Arrays.asList(parcel, parcelable, notMatching, matching))
+            .processedWith(new AutoValueProcessor())
+            .compilesWithoutError()
+            .and()
+            .generatesSources(expectedNotMatching, expectedMatching);
+  }
+
+  @Test public void noOpWhenParcelableContractIsSatisfied() {
+    TypeElement type = elements.getTypeElement(SampleTypeWithParcelableContractSatisfied.class.getCanonicalName());
+    AutoValueExtension.Context context = createContext(type);
+    assertFalse(extension.applicable(context));
   }
 
   @Test public void handlesAllParcelableTypes() {

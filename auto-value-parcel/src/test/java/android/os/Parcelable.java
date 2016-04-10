@@ -8,6 +8,6 @@ public interface Parcelable {
   }
 
   int describeContents();
-  void writeToParcel(Object dest, int flags);
+  void writeToParcel(Parcel dest, int flags);
 
 }
