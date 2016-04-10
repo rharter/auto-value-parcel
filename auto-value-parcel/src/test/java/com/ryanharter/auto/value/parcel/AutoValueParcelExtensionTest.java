@@ -8,6 +8,7 @@ import com.google.auto.value.processor.AutoValueProcessor;
 import com.google.common.collect.ImmutableSet;
 import com.google.testing.compile.CompilationRule;
 import com.google.testing.compile.JavaFileObjects;
+import com.ryanharter.auto.value.parcel.model.SampleTypeWithParcelableContractSatisfied;
 import com.ryanharter.auto.value.parcel.util.TestMessager;
 import com.ryanharter.auto.value.parcel.util.TestProcessingEnvironment;
 
@@ -32,6 +33,7 @@ import javax.tools.JavaFileObject;
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 public class AutoValueParcelExtensionTest {
@@ -384,9 +386,9 @@ public class AutoValueParcelExtensionTest {
         + "import com.google.auto.value.AutoValue;\n"
         + "@AutoValue public abstract class Yes implements Parcelable {\n"
         + "  public abstract String name();\n"
-        + "public int describeContents() {\n"
-        + "  return 0;\n"
-        + "}\n"
+        + "  public int describeContents() {\n"
+        + "    return 0;\n"
+        + "  }\n"
         + "}"
     );
 
@@ -465,6 +467,117 @@ public class AutoValueParcelExtensionTest {
         .compilesWithoutError()
         .and()
         .generatesSources(expectedNotMatching, expectedMatching);
+  }
+
+  @Test public void writeToParcelOmittedWhenAlreadyDefined() {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Test", ""
+            + "package test;\n"
+            + "import android.os.Parcel;\n"
+            + "import android.os.Parcelable;\n"
+            + "import com.google.auto.value.AutoValue;\n"
+            + "@AutoValue public abstract class Test implements Parcelable {\n"
+            + "  public abstract String name();\n"
+            + "  public void writeToParcel(Parcel parcel, int flags) {\n"
+            + "  }\n"
+            + "}"
+    );
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test/AutoValue_Test", ""
+            + "package test;\n" +
+            "\n" +
+            "import android.os.Parcel;\n" +
+            "import android.os.Parcelable;\n" +
+            "import java.lang.Override;\n" +
+            "import java.lang.String;\n" +
+            "\n" +
+            "final class AutoValue_Test extends $AutoValue_Test {\n" +
+            "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = new Parcelable.Creator<AutoValue_Test>() {\n" +
+            "    @Override\n" +
+            "    public AutoValue_Test createFromParcel(Parcel in) {\n" +
+            "      return new AutoValue_Test(\n" +
+            "        in.readString()\n" +
+            "      );\n" +
+            "    }\n" +
+            "    @Override\n" +
+            "    public AutoValue_Test[] newArray(int size) {\n" +
+            "      return new AutoValue_Test[size];\n" +
+            "    }\n" +
+            "  };\n" +
+            "\n" +
+            "  AutoValue_Test(String name) {\n" +
+            "    super(name);\n" +
+            "  }\n" +
+            "\n" +
+            "  @Override\n" +
+            "  public int describeContents() {\n" +
+            "    return 0;\n" +
+            "  }\n" +
+            "}");
+
+    assertAbout(javaSources())
+            .that(Arrays.asList(parcel, parcelable, source))
+            .processedWith(new AutoValueProcessor())
+            .compilesWithoutError()
+            .and()
+            .generatesSources(expected);
+  }
+
+  @Test public void creatorOmittedWhenAlreadyDefined() {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Test", ""
+            + "package test;\n"
+            + "import android.os.Parcel;\n"
+            + "import android.os.Parcelable;\n"
+            + "import com.google.auto.value.AutoValue;\n"
+            + "@AutoValue public abstract class Test implements Parcelable {\n"
+            + "  public abstract String name();\n"
+            + "  public static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {\n"
+            + "    @Override\n"
+            + "    public Test createFromParcel(Parcel in) {\n"
+            + "      return null;\n"
+            + "    }\n"
+            + "    @Override\n"
+            + "    public Test[] newArray(int size) {\n"
+            + "      return new Test[size];\n"
+            + "    }\n"
+            + "  };\n"
+            + "}"
+    );
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test/AutoValue_Test", ""
+            + "package test;\n" +
+            "\n" +
+            "import android.os.Parcel;\n" +
+            "import java.lang.Override;\n" +
+            "import java.lang.String;\n" +
+            "\n" +
+            "final class AutoValue_Test extends $AutoValue_Test {\n" +
+            "  AutoValue_Test(String name) {\n" +
+            "    super(name);\n" +
+            "  }\n" +
+            "\n" +
+            "  @Override\n" +
+            "  public void writeToParcel(Parcel dest, int flags) {\n" +
+            "    dest.writeString(name());\n" +
+            "  }\n" +
+            "\n" +
+            "  @Override\n" +
+            "  public int describeContents() {\n" +
+            "    return 0;\n" +
+            "  }\n" +
+            "}");
+
+    assertAbout(javaSources())
+            .that(Arrays.asList(parcel, parcelable, source))
+            .processedWith(new AutoValueProcessor())
+            .compilesWithoutError()
+            .and()
+            .generatesSources(expected);
+  }
+
+  @Test public void noOpWhenParcelableContractIsSatisfied() {
+    TypeElement type = elements.getTypeElement(SampleTypeWithParcelableContractSatisfied.class.getCanonicalName());
+    AutoValueExtension.Context context = createContext(type);
+    assertFalse(extension.applicable(context));
   }
 
   @Test public void handlesAllParcelableTypes() {
