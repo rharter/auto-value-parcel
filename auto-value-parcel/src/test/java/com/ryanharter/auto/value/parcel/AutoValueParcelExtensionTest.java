@@ -1,6 +1,9 @@
 package com.ryanharter.auto.value.parcel;
 
-import android.os.Parcelable;
+import static com.google.common.truth.Truth.assertAbout;
+import static com.google.common.truth.Truth.assertThat;
+import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
+import static org.junit.Assert.fail;
 
 import com.google.auto.common.MoreElements;
 import com.google.auto.value.extension.AutoValueExtension;
@@ -8,9 +11,10 @@ import com.google.auto.value.processor.AutoValueProcessor;
 import com.google.common.collect.ImmutableSet;
 import com.google.testing.compile.CompilationRule;
 import com.google.testing.compile.JavaFileObjects;
+import android.os.Parcelable;
+
 import com.ryanharter.auto.value.parcel.util.TestMessager;
 import com.ryanharter.auto.value.parcel.util.TestProcessingEnvironment;
-
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -19,7 +23,6 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
@@ -28,11 +31,6 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.Elements;
 import javax.tools.JavaFileObject;
-
-import static com.google.common.truth.Truth.assertAbout;
-import static com.google.common.truth.Truth.assertThat;
-import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
-import static org.junit.Assert.fail;
 
 public class AutoValueParcelExtensionTest {
 
@@ -465,6 +463,51 @@ public class AutoValueParcelExtensionTest {
         .compilesWithoutError()
         .and()
         .generatesSources(expectedNotMatching, expectedMatching);
+  }
+
+  @Test public void failWhenWriteToParcelAlreadyDefinedTest() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Test", ""
+        + "package test;\n"
+        + "import android.os.Parcel;\n"
+        + "import android.os.Parcelable;\n"
+        + "import com.google.auto.value.AutoValue;\n"
+        + "@AutoValue public abstract class Test implements Parcelable {\n"
+        + "  public abstract String name();\n"
+        + "  @Override\n"
+        + "  public void writeToParcel(Parcel dest, int flags) {\n"
+        + "  }\n"
+        + "}"
+    );
+
+    assertAbout(javaSources())
+        .that(Arrays.asList(parcel, parcelable, source))
+        .processedWith(new AutoValueProcessor())
+        .failsToCompile();
+  }
+
+  @Test public void failWhenCreatorAlreadyDefinedTest() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Test", ""
+        + "package test;\n"
+        + "import android.os.Parcel;\n"
+        + "import android.os.Parcelable;\n"
+        + "import com.google.auto.value.AutoValue;\n"
+        + "@AutoValue public abstract class Test implements Parcelable {\n"
+        + "  public abstract String name();\n"
+        + "  public static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {\n"
+        + "    @Override public Test createFromParcel(Parcel in) {\n"
+        + "      return null;\n"
+        + "    }\n"
+        + "    @Override public Test[] newArray(int size) {\n"
+        + "      return new Test[size];\n"
+        + "    }\n"
+        + "  };\n"
+        + "}"
+    );
+
+    assertAbout(javaSources())
+        .that(Arrays.asList(parcel, parcelable, source))
+        .processedWith(new AutoValueProcessor())
+        .failsToCompile();
   }
 
   @Test public void handlesAllParcelableTypes() {
