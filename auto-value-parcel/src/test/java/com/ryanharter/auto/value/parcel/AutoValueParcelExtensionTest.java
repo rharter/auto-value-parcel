@@ -482,7 +482,12 @@ public class AutoValueParcelExtensionTest {
     assertAbout(javaSources())
         .that(Arrays.asList(parcel, parcelable, source))
         .processedWith(new AutoValueProcessor())
-        .failsToCompile();
+        .failsToCompile()
+        .withErrorContaining("Manual implementation of Parcelable#writeToParcel(Parcel,int) found when "
+                             + "processing test.Test. Remove this so auto-value-parcel can automatically "
+                             + "generate the implementation for you.")
+        .in(source)
+        .onLine(8);
   }
 
   @Test public void failWhenCreatorAlreadyDefinedTest() throws Exception {
@@ -507,7 +512,12 @@ public class AutoValueParcelExtensionTest {
     assertAbout(javaSources())
         .that(Arrays.asList(parcel, parcelable, source))
         .processedWith(new AutoValueProcessor())
-        .failsToCompile();
+        .failsToCompile()
+        .withErrorContaining("Manual implementation of a static Parcelable.Creator<T> CREATOR field "
+                             + "found when processing test.Test. Remove this so auto-value-parcel can "
+                             + "automatically generate the implementation for you.")
+        .in(source)
+        .onLine(7);
   }
 
   @Test public void handlesAllParcelableTypes() {
