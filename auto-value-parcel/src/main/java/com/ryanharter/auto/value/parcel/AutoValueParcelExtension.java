@@ -28,14 +28,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 
@@ -82,9 +81,25 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
 
   @Override
   public boolean applicable(Context context) {
+    TypeMirror autoValueClass = context.autoValueClass().asType();
+    // Disallow manual implementation of the CREATOR instance
+    VariableElement creator = findCreator(context);
+    if (creator != null) {
+      context.processingEnvironment().getMessager().printMessage(Diagnostic.Kind.ERROR,
+          "Manual implementation of a static Parcelable.Creator<T> CREATOR field found when processing "
+              + autoValueClass.toString() + ". Remove this so auto-value-parcel can automatically generate the "
+              + "implementation for you.", creator);
+    }
+    // Disallow manual implementation of writeToParcel
+    ExecutableElement writeToParcel = findWriteToParcel(context);
+    if (writeToParcel != null) {
+      context.processingEnvironment().getMessager().printMessage(Diagnostic.Kind.ERROR,
+          "Manual implementation of Parcelable#writeToParcel(Parcel,int) found when processing "
+              + autoValueClass.toString() + ". Remove this so auto-value-parcel can automatically generate the "
+              + "implementation for you.", writeToParcel);
+    }
     TypeMirror parcelable = context.processingEnvironment().getElementUtils()
         .getTypeElement("android.os.Parcelable").asType();
-    TypeMirror autoValueClass = context.autoValueClass().asType();
     return TypeSimplifier.isClassOfType(context.processingEnvironment().getTypeUtils(), parcelable,
         autoValueClass);
   }
@@ -135,6 +150,41 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
       }
     }
     return true;
+  }
+
+  private static ExecutableElement findWriteToParcel(Context context) {
+    ProcessingEnvironment env = context.processingEnvironment();
+    TypeMirror parcel = env.getElementUtils().getTypeElement("android.os.Parcel").asType();
+    for (ExecutableElement element : MoreElements.getLocalAndInheritedMethods(
+        context.autoValueClass(), env.getElementUtils())) {
+      if (element.getSimpleName().contentEquals("writeToParcel")
+          && MoreTypes.isTypeOf(void.class, element.getReturnType())
+          && !element.getModifiers().contains(Modifier.ABSTRACT)) {
+        List<? extends VariableElement> parameters = element.getParameters();
+        if (parameters.size() == 2
+            && env.getTypeUtils().isSameType(parcel, parameters.get(0).asType())
+            && MoreTypes.isTypeOf(int.class, parameters.get(1).asType())) {
+          return element;
+        }
+      }
+    }
+    return null;
+  }
+
+  private static VariableElement findCreator(Context context) {
+    ProcessingEnvironment env = context.processingEnvironment();
+    Types typeUtils = env.getTypeUtils();
+    Elements elementUtils = env.getElementUtils();
+    TypeMirror creatorType = typeUtils.erasure(elementUtils.getTypeElement("android.os.Parcelable.Creator").asType());
+    List<? extends Element> members = env.getElementUtils().getAllMembers(context.autoValueClass());
+    for (VariableElement field : ElementFilter.fieldsIn(members)) {
+      if (field.getSimpleName().contentEquals("CREATOR")
+          && typeUtils.isSameType(creatorType, typeUtils.erasure(field.asType()))
+          && field.getModifiers().contains(Modifier.STATIC)) {
+        return field;
+      }
+    }
+    return null;
   }
 
   private ImmutableList<Property> readProperties(Map<String, ExecutableElement> properties) {
