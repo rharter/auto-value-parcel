@@ -43,7 +43,7 @@ final class Parcelables {
       SERIALIZABLE, PERSISTABLEBUNDLE, SIZE, SIZEF);
 
   public static boolean isValidType(TypeName typeName) {
-    return typeName.isPrimitive() || VALID_TYPES.contains(typeName);
+    return typeName.isPrimitive() || typeName.isBoxedPrimitive() || VALID_TYPES.contains(typeName);
   }
 
   public static boolean isValidType(Types types, TypeElement type) {
@@ -59,7 +59,7 @@ final class Parcelables {
       if (typeName instanceof ParameterizedTypeName) {
         typeName = ((ParameterizedTypeName) typeName).rawType;
       }
-      if (typeName.isPrimitive() || VALID_TYPES.contains(typeName)) {
+      if (isValidType(typeName)) {
         return typeName;
       }
 
@@ -86,19 +86,19 @@ final class Parcelables {
 
     if (type.equals(STRING)) {
       block.add("in.readString()");
-    } else if (type.equals(TypeName.BYTE)) {
+    } else if (type.equals(TypeName.BYTE) || type.equals(TypeName.BYTE.box())) {
       block.add("in.readByte()");
-    } else if (type.equals(TypeName.INT)) {
+    } else if (type.equals(TypeName.INT) || type.equals(TypeName.INT.box())) {
       block.add("in.readInt()");
-    } else if (type.equals(TypeName.SHORT)) {
+    } else if (type.equals(TypeName.SHORT) || type.equals(TypeName.SHORT.box())) {
       block.add("(short) in.readInt()");
-    } else if (type.equals(TypeName.LONG)) {
+    } else if (type.equals(TypeName.LONG) || type.equals(TypeName.LONG.box())) {
       block.add("in.readLong()");
-    } else if (type.equals(TypeName.FLOAT)) {
+    } else if (type.equals(TypeName.FLOAT) || type.equals(TypeName.FLOAT.box())) {
       block.add("in.readFloat()");
-    } else if (type.equals(TypeName.DOUBLE)) {
+    } else if (type.equals(TypeName.DOUBLE) || type.equals(TypeName.DOUBLE.box())) {
       block.add("in.readDouble()");
-    } else if (type.equals(TypeName.BOOLEAN)) {
+    } else if (type.equals(TypeName.BOOLEAN) || type.equals(TypeName.BOOLEAN.box())) {
       block.add("in.readInt() == 1");
     } else if (type.equals(PARCELABLE)) {
       block.add("($T) in.readParcelable(cl)", property.type);
@@ -163,19 +163,21 @@ final class Parcelables {
 
     if (type.equals(STRING))
       block.add("$N.writeString($N())", out, property.methodName);
-    else if (type.equals(TypeName.BYTE))
+    else if (type.equals(TypeName.BYTE) || type.equals(TypeName.BYTE.box()))
       block.add("$N.writeInt($N())", out, property.methodName);
-    else if (type.equals(TypeName.INT))
+    else if (type.equals(TypeName.INT) || type.equals(TypeName.INT.box()))
       block.add("$N.writeInt($N())", out, property.methodName);
     else if (type.equals(TypeName.SHORT))
       block.add("$N.writeInt(((Short) $N()).intValue())", out, property.methodName);
-    else if (type.equals(TypeName.LONG))
+    else if (type.equals(TypeName.SHORT.box()))
+      block.add("$N.writeInt($N().intValue())", out, property.methodName);
+    else if (type.equals(TypeName.LONG) || type.equals(TypeName.LONG.box()))
       block.add("$N.writeLong($N())", out, property.methodName);
-    else if (type.equals(TypeName.FLOAT))
+    else if (type.equals(TypeName.FLOAT) || type.equals(TypeName.FLOAT.box()))
       block.add("$N.writeFloat($N())", out, property.methodName);
-    else if (type.equals(TypeName.DOUBLE))
+    else if (type.equals(TypeName.DOUBLE) || type.equals(TypeName.DOUBLE.box()))
       block.add("$N.writeDouble($N())", out, property.methodName);
-    else if (type.equals(TypeName.BOOLEAN))
+    else if (type.equals(TypeName.BOOLEAN) || type.equals(TypeName.BOOLEAN.box()))
       block.add("$N.writeInt($N() ? 1 : 0)", out, property.methodName);
     else if (type.equals(PARCELABLE))
       block.add("$N.writeParcelable($N(), 0)", out, property.methodName);
@@ -236,13 +238,8 @@ final class Parcelables {
 
   static boolean isTypeRequiresClassLoader(final TypeName type) {
     return !(type.equals(STRING) ||
-            type.equals(TypeName.BYTE) ||
-            type.equals(TypeName.INT) ||
-            type.equals(TypeName.SHORT) ||
-            type.equals(TypeName.LONG) ||
-            type.equals(TypeName.FLOAT) ||
-            type.equals(TypeName.DOUBLE) ||
-            type.equals(TypeName.BOOLEAN) ||
+            type.isPrimitive() ||
+            type.isBoxedPrimitive() ||
             type.equals(CHARSEQUENCE) ||
             type.equals(BOOLEANARRAY) ||
             type.equals(BYTEARRAY) ||

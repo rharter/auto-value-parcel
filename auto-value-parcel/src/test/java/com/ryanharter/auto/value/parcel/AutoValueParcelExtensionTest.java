@@ -162,7 +162,7 @@ public class AutoValueParcelExtensionTest {
         "    public AutoValue_Test createFromParcel(Parcel in) {\n" +
         "      return new AutoValue_Test(\n" +
         "          in.readInt(),\n" +
-        "          in.readInt() == 0 ? (Double) in.readSerializable() : null,\n" +
+        "          in.readInt() == 0 ? in.readDouble() : null,\n" +
         "          in.readString(),\n" +
         "          in.readLong()\n" +
         "      );\n" +
@@ -184,7 +184,7 @@ public class AutoValueParcelExtensionTest {
         "      dest.writeInt(1);\n" +
         "    } else {\n" +
         "      dest.writeInt(0);\n" +
-        "      dest.writeSerializable(b());\n" +
+        "      dest.writeDouble(b());\n" +
         "    }\n" +
         "    dest.writeString(c());\n" +
         "    dest.writeLong(d());\n" +
@@ -556,12 +556,19 @@ public class AutoValueParcelExtensionTest {
         "@AutoValue public abstract class Foo implements Parcelable {\n" +
         "  @Nullable public abstract String a();\n" +
         "  public abstract byte b();\n" +
+        "  public abstract Byte B();\n" +
         "  public abstract int c();\n" +
+        "  public abstract Integer C();\n" +
         "  public abstract short d();\n" +
+        "  public abstract Short D();\n" +
         "  public abstract long e();\n" +
+        "  public abstract Long E();\n" +
         "  public abstract float f();\n" +
+        "  public abstract Float F();\n" +
         "  public abstract double g();\n" +
+        "  public abstract Double G();\n" +
         "  public abstract boolean h();\n" +
+        "  public abstract Boolean H();\n" +
         "  public abstract Parcelable i();\n" +
         "  public abstract CharSequence j();\n" +
         "  public abstract Map<String, String> k();\n" +
@@ -595,9 +602,15 @@ public class AutoValueParcelExtensionTest {
         "import android.util.SparseBooleanArray;\n" +
         "import java.io.Serializable;\n" +
         "import java.lang.Boolean;\n" +
+        "import java.lang.Byte;\n" +
         "import java.lang.CharSequence;\n" +
         "import java.lang.ClassLoader;\n" +
+        "import java.lang.Double;\n" +
+        "import java.lang.Float;\n" +
+        "import java.lang.Integer;\n" +
+        "import java.lang.Long;\n" +
         "import java.lang.Override;\n" +
+        "import java.lang.Short;\n" +
         "import java.lang.String;\n" +
         "import java.lang.SuppressWarnings;\n" +
         "import java.util.List;\n" +
@@ -612,11 +625,18 @@ public class AutoValueParcelExtensionTest {
         "      return new AutoValue_Foo(\n" +
         "        in.readInt() == 0 ? in.readString() : null,\n" +
         "        in.readByte(),\n" +
+        "        in.readByte(),\n" +
+        "        in.readInt(),\n" +
         "        in.readInt(),\n" +
         "        (short) in.readInt(),\n" +
+        "        (short) in.readInt(),\n" +
+        "        in.readLong(),\n" +
         "        in.readLong(),\n" +
         "        in.readFloat(),\n" +
+        "        in.readFloat(),\n" +
         "        in.readDouble(),\n" +
+        "        in.readDouble(),\n" +
+        "        in.readInt() == 1,\n" +
         "        in.readInt() == 1,\n" +
         "        (Parcelable) in.readParcelable(cl),\n" +
         "        (CharSequence) in.readCharSequence(),\n" +
@@ -635,7 +655,7 @@ public class AutoValueParcelExtensionTest {
         "        in.readSizeF(),\n" +
         "        in.readInt() == 0 ? (Parcelable1) in.readParcelable(cl) : null,\n" +
         "        (FooBinder) in.readStrongBinder(),\n" +
-        "        in.readInt() == 0 ? (Boolean) in.readSerializable() : null\n" +
+        "        in.readInt() == 0 ? in.readInt() == 1 : null\n" +
         "      );\n" +
         "    }\n" +
         "    @Override\n" +
@@ -644,8 +664,8 @@ public class AutoValueParcelExtensionTest {
         "    }\n" +
         "  };\n" +
         "\n" +
-        "  AutoValue_Foo(String a, byte b, int c, short d, long e, float f, double g, boolean h, Parcelable i, CharSequence j, Map<String, String> k, List<String> l, boolean[] m, byte[] n, int[] s, long[] t, Serializable u, SparseArray w, SparseBooleanArray x, Bundle y, PersistableBundle z, Size aa, SizeF ab, Parcelable1 ad, FooBinder ae, Boolean af) {\n" +
-        "    super(a, b, c, d, e, f, g, h, i, j, k, l, m, n, s, t, u, w, x, y, z, aa, ab, ad, ae, af);\n" +
+        "  AutoValue_Foo(String a, byte b, Byte B, int c, Integer C, short d, Short D, long e, Long E, float f, Float F, double g, Double G, boolean h, Boolean H, Parcelable i, CharSequence j, Map<String, String> k, List<String> l, boolean[] m, byte[] n, int[] s, long[] t, Serializable u, SparseArray w, SparseBooleanArray x, Bundle y, PersistableBundle z, Size aa, SizeF ab, Parcelable1 ad, FooBinder ae, Boolean af) {\n" +
+        "    super(a, b, B, c, C, d, D, e, E, f, F, g, G, h, H, i, j, k, l, m, n, s, t, u, w, x, y, z, aa, ab, ad, ae, af);\n" +
         "  }\n" +
         "\n" +
         "  @Override\n" +
@@ -657,12 +677,19 @@ public class AutoValueParcelExtensionTest {
         "      dest.writeString(a());\n" +
         "    }\n" +
         "    dest.writeInt(b());\n" +
+        "    dest.writeInt(B());\n" +
         "    dest.writeInt(c());\n" +
+        "    dest.writeInt(C());\n" +
         "    dest.writeInt(((Short) d()).intValue());\n" +
+        "    dest.writeInt(D().intValue());\n" +
         "    dest.writeLong(e());\n" +
+        "    dest.writeLong(E());\n" +
         "    dest.writeFloat(f());\n" +
+        "    dest.writeFloat(F());\n" +
         "    dest.writeDouble(g());\n" +
+        "    dest.writeDouble(G());\n" +
         "    dest.writeInt(h() ? 1 : 0);\n" +
+        "    dest.writeInt(H() ? 1 : 0);\n" +
         "    dest.writeParcelable(i(), 0);\n" +
         "    dest.writeCharSequence(j());\n" +
         "    dest.writeMap(k());\n" +
@@ -689,7 +716,7 @@ public class AutoValueParcelExtensionTest {
         "      dest.writeInt(1);\n" +
         "    } else {\n" +
         "      dest.writeInt(0);\n" +
-        "      dest.writeSerializable(af());\n" +
+        "      dest.writeInt(af() ? 1 : 0);\n" +
         "    }\n" +
         "  }\n" +
         "\n" +
