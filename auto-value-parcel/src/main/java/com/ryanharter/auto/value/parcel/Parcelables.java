@@ -20,6 +20,7 @@ final class Parcelables {
   private static final TypeName LIST = ClassName.get("java.util", "List");
   private static final TypeName BOOLEANARRAY = ArrayTypeName.of(boolean.class);
   private static final TypeName BYTEARRAY = ArrayTypeName.of(byte.class);
+  private static final TypeName CHARARRAY = ArrayTypeName.of(char.class);
   private static final TypeName INTARRAY = ArrayTypeName.of(int.class);
   private static final TypeName LONGARRAY = ArrayTypeName.of(long.class);
   private static final TypeName STRINGARRAY = ArrayTypeName.of(String.class);
@@ -38,8 +39,8 @@ final class Parcelables {
   private static final TypeName TEXTUTILS = ClassName.get("android.text", "TextUtils");
 
   private static final Set<TypeName> VALID_TYPES = ImmutableSet.of(STRING, MAP, LIST, BOOLEANARRAY,
-      BYTEARRAY, INTARRAY, LONGARRAY, STRINGARRAY, SPARSEARRAY, SPARSEBOOLEANARRAY, BUNDLE,
-      PARCELABLE, PARCELABLEARRAY, CHARSEQUENCE, IBINDER, OBJECTARRAY,
+      BYTEARRAY, CHARARRAY, INTARRAY, LONGARRAY, STRINGARRAY, SPARSEARRAY, SPARSEBOOLEANARRAY,
+      BUNDLE, PARCELABLE, PARCELABLEARRAY, CHARSEQUENCE, IBINDER, OBJECTARRAY,
       SERIALIZABLE, PERSISTABLEBUNDLE, SIZE, SIZEF);
 
   public static boolean isValidType(TypeName typeName) {
@@ -92,6 +93,8 @@ final class Parcelables {
       block.add("in.readInt()");
     } else if (type.equals(TypeName.SHORT) || type.equals(TypeName.SHORT.box())) {
       block.add("(short) in.readInt()");
+    } else if (type.equals(TypeName.CHAR) || type.equals(TypeName.CHAR.box())) {
+      block.add("(char) in.readInt()");
     } else if (type.equals(TypeName.LONG) || type.equals(TypeName.LONG.box())) {
       block.add("in.readLong()");
     } else if (type.equals(TypeName.FLOAT) || type.equals(TypeName.FLOAT.box())) {
@@ -112,6 +115,8 @@ final class Parcelables {
       block.add("in.createBooleanArray()");
     } else if (type.equals(BYTEARRAY)) {
       block.add("in.createByteArray()");
+    } else if (type.equals(CHARARRAY)) {
+      block.add("in.createCharArray()");
     } else if (type.equals(STRINGARRAY)) {
       block.add("in.readStringArray()");
     } else if (type.equals(IBINDER)) {
@@ -169,6 +174,8 @@ final class Parcelables {
       block.add("$N.writeInt(((Short) $N()).intValue())", out, property.methodName);
     else if (type.equals(TypeName.SHORT.box()))
       block.add("$N.writeInt($N().intValue())", out, property.methodName);
+    else if (type.equals(TypeName.CHAR) || type.equals(TypeName.CHAR.box()))
+      block.add("$N.writeInt($N())", out, property.methodName);
     else if (type.equals(TypeName.LONG) || type.equals(TypeName.LONG.box()))
       block.add("$N.writeLong($N())", out, property.methodName);
     else if (type.equals(TypeName.FLOAT) || type.equals(TypeName.FLOAT.box()))
@@ -189,6 +196,8 @@ final class Parcelables {
       block.add("$N.writeBooleanArray($N())", out, property.methodName);
     else if (type.equals(BYTEARRAY))
       block.add("$N.writeByteArray($N())", out, property.methodName);
+    else if (type.equals(CHARARRAY))
+      block.add("$N.writeCharArray($N())", out, property.methodName);
     else if (type.equals(STRINGARRAY))
       block.add("$N.writeStringArray($N())", out, property.methodName);
     else if (type.equals(IBINDER))
@@ -239,6 +248,7 @@ final class Parcelables {
             type.equals(CHARSEQUENCE) ||
             type.equals(BOOLEANARRAY) ||
             type.equals(BYTEARRAY) ||
+            type.equals(CHARARRAY) ||
             type.equals(STRINGARRAY) ||
             type.equals(IBINDER) ||
             type.equals(INTARRAY) ||
