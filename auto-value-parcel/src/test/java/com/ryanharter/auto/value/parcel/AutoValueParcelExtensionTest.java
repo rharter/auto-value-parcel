@@ -87,6 +87,7 @@ public class AutoValueParcelExtensionTest {
         "  ArrayList readArrayList(ClassLoader cl);\n" +
         "  boolean[] createBooleanArray();\n" +
         "  byte[] createByteArray();\n" +
+        "  char[] createCharArray();\n" +
         "  int[] createIntArray();\n" +
         "  long[] createLongArray();\n" +
         "  String[] readStringArray();\n" +
@@ -105,6 +106,7 @@ public class AutoValueParcelExtensionTest {
         "  void writeList(List in);\n" +
         "  void writeBooleanArray(boolean[] in);\n" +
         "  void writeByteArray(byte[] in);\n" +
+        "  void writeCharArray(char[] in);\n" +
         "  void writeIntArray(int[] in);\n" +
         "  void writeLongArray(long[] in);\n" +
         "  void writeSerializable(Serializable in);\n" +
@@ -600,6 +602,9 @@ public class AutoValueParcelExtensionTest {
         "  @Nullable public abstract Parcelable1 ad();\n" +
         "  public abstract FooBinder ae();\n" +
         "  @Nullable public abstract Boolean af();\n" +
+        "  public abstract char ag();\n" +
+        "  public abstract Character ah();\n" +
+        "  public abstract char[] ai();\n" +
         "}");
 
     JavaFileObject expected = JavaFileObjects.forSourceString("test/AutoValue_Foo", "" +
@@ -618,6 +623,7 @@ public class AutoValueParcelExtensionTest {
         "import java.lang.Boolean;\n" +
         "import java.lang.Byte;\n" +
         "import java.lang.CharSequence;\n" +
+        "import java.lang.Character;\n" +
         "import java.lang.ClassLoader;\n" +
         "import java.lang.Double;\n" +
         "import java.lang.Float;\n" +
@@ -669,7 +675,10 @@ public class AutoValueParcelExtensionTest {
         "        in.readSizeF(),\n" +
         "        in.readInt() == 0 ? (Parcelable1) in.readParcelable(cl) : null,\n" +
         "        (FooBinder) in.readStrongBinder(),\n" +
-        "        in.readInt() == 0 ? in.readInt() == 1 : null\n" +
+        "        in.readInt() == 0 ? in.readInt() == 1 : null,\n" +
+        "        (char) in.readInt(),\n" +
+        "        (char) in.readInt(),\n" +
+        "        in.createCharArray()\n" +
         "      );\n" +
         "    }\n" +
         "    @Override\n" +
@@ -678,8 +687,8 @@ public class AutoValueParcelExtensionTest {
         "    }\n" +
         "  };\n" +
         "\n" +
-        "  AutoValue_Foo(String a, byte b, Byte B, int c, Integer C, short d, Short D, long e, Long E, float f, Float F, double g, Double G, boolean h, Boolean H, Parcelable i, CharSequence j, Map<String, String> k, List<String> l, boolean[] m, byte[] n, int[] s, long[] t, Serializable u, SparseArray w, SparseBooleanArray x, Bundle y, PersistableBundle z, Size aa, SizeF ab, Parcelable1 ad, FooBinder ae, Boolean af) {\n" +
-        "    super(a, b, B, c, C, d, D, e, E, f, F, g, G, h, H, i, j, k, l, m, n, s, t, u, w, x, y, z, aa, ab, ad, ae, af);\n" +
+        "  AutoValue_Foo(String a, byte b, Byte B, int c, Integer C, short d, Short D, long e, Long E, float f, Float F, double g, Double G, boolean h, Boolean H, Parcelable i, CharSequence j, Map<String, String> k, List<String> l, boolean[] m, byte[] n, int[] s, long[] t, Serializable u, SparseArray w, SparseBooleanArray x, Bundle y, PersistableBundle z, Size aa, SizeF ab, Parcelable1 ad, FooBinder ae, Boolean af, char ag, Character ah, char[] ai) {\n" +
+        "    super(a, b, B, c, C, d, D, e, E, f, F, g, G, h, H, i, j, k, l, m, n, s, t, u, w, x, y, z, aa, ab, ad, ae, af, ag, ah, ai);\n" +
         "  }\n" +
         "\n" +
         "  @Override\n" +
@@ -732,6 +741,9 @@ public class AutoValueParcelExtensionTest {
         "      dest.writeInt(0);\n" +
         "      dest.writeInt(af() ? 1 : 0);\n" +
         "    }\n" +
+        "    dest.writeInt(ag());\n" +
+        "    dest.writeInt(ah());\n" +
+        "    dest.writeCharArray(ai());\n" +
         "  }\n" +
         "\n" +
         "  @Override\n" +
