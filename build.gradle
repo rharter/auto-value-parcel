@@ -1,18 +1,11 @@
 subprojects { project ->
     repositories {
-        maven {
-            url 'http://oss.sonatype.org/content/repositories/snapshots'
-        }
         mavenCentral()
     }
 
     buildscript {
         repositories {
-            jcenter()
-        }
-
-        dependencies {
-            classpath 'com.netflix.nebula:gradle-extra-configurations-plugin:3.0.3'
+            mavenCentral()
         }
     }
 }
