@@ -36,6 +36,7 @@ final class Parcelables {
   private static final TypeName PERSISTABLEBUNDLE = ClassName.get("android.os", "PersistableBundle");
   private static final TypeName SIZE = ClassName.get("android.util", "Size");
   private static final TypeName SIZEF = ClassName.get("android.util", "SizeF");
+  private static final TypeName TEXTUTILS = ClassName.get("android.text", "TextUtils");
 
   private static final Set<TypeName> VALID_TYPES = ImmutableSet.of(STRING, MAP, LIST, BOOLEANARRAY,
       BYTEARRAY, INTARRAY, LONGARRAY, STRINGARRAY, SPARSEARRAY, SPARSEBOOLEANARRAY, BUNDLE,
@@ -103,7 +104,7 @@ final class Parcelables {
     } else if (type.equals(PARCELABLE)) {
       block.add("($T) in.readParcelable(cl)", property.type);
     } else if (type.equals(CHARSEQUENCE)) {
-      block.add("($T) in.readCharSequence()", property.type);
+      block.add("$T.CHAR_SEQUENCE_CREATOR.createFromParcel(in)", TEXTUTILS);
     } else if (type.equals(MAP)) {
       block.add("($T) in.readHashMap(cl)", property.type);
     } else if (type.equals(LIST)) {
@@ -182,7 +183,7 @@ final class Parcelables {
     else if (type.equals(PARCELABLE))
       block.add("$N.writeParcelable($N(), 0)", out, property.methodName);
     else if (type.equals(CHARSEQUENCE))
-      block.add("$N.writeCharSequence($N())", out, property.methodName);
+      block.add("$T.writeToParcel($N(), $N, 0)", TEXTUTILS, property.methodName, out);
     else if (type.equals(MAP))
       block.add("$N.writeMap($N())", out, property.methodName);
     else if (type.equals(LIST))
