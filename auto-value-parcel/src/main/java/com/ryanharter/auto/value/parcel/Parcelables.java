@@ -29,17 +29,17 @@ final class Parcelables {
   private static final TypeName PARCELABLE = ClassName.get("android.os", "Parcelable");
   private static final TypeName PARCELABLEARRAY = ArrayTypeName.of(PARCELABLE);
   private static final TypeName CHARSEQUENCE = ClassName.get("java.lang", "CharSequence");
-  private static final TypeName CHARSEQUENCEARRAY = ArrayTypeName.of(CHARSEQUENCE);
   private static final TypeName IBINDER = ClassName.get("android.os", "IBinder");
   private static final TypeName OBJECTARRAY = ArrayTypeName.of(TypeName.OBJECT);
   private static final TypeName SERIALIZABLE = ClassName.get("java.io", "Serializable");
   private static final TypeName PERSISTABLEBUNDLE = ClassName.get("android.os", "PersistableBundle");
   private static final TypeName SIZE = ClassName.get("android.util", "Size");
   private static final TypeName SIZEF = ClassName.get("android.util", "SizeF");
+  private static final TypeName TEXTUTILS = ClassName.get("android.text", "TextUtils");
 
   private static final Set<TypeName> VALID_TYPES = ImmutableSet.of(STRING, MAP, LIST, BOOLEANARRAY,
       BYTEARRAY, INTARRAY, LONGARRAY, STRINGARRAY, SPARSEARRAY, SPARSEBOOLEANARRAY, BUNDLE,
-      PARCELABLE, PARCELABLEARRAY, CHARSEQUENCE, CHARSEQUENCEARRAY, IBINDER, OBJECTARRAY,
+      PARCELABLE, PARCELABLEARRAY, CHARSEQUENCE, IBINDER, OBJECTARRAY,
       SERIALIZABLE, PERSISTABLEBUNDLE, SIZE, SIZEF);
 
   public static boolean isValidType(TypeName typeName) {
@@ -103,7 +103,7 @@ final class Parcelables {
     } else if (type.equals(PARCELABLE)) {
       block.add("($T) in.readParcelable(cl)", property.type);
     } else if (type.equals(CHARSEQUENCE)) {
-      block.add("($T) in.readCharSequence()", property.type);
+      block.add("$T.CHAR_SEQUENCE_CREATOR.createFromParcel(in)", TEXTUTILS);
     } else if (type.equals(MAP)) {
       block.add("($T) in.readHashMap(cl)", property.type);
     } else if (type.equals(LIST)) {
@@ -114,8 +114,6 @@ final class Parcelables {
       block.add("in.createByteArray()");
     } else if (type.equals(STRINGARRAY)) {
       block.add("in.readStringArray()");
-    } else if (type.equals(CHARSEQUENCEARRAY)) {
-      block.add("in.readCharSequenceArray()");
     } else if (type.equals(IBINDER)) {
       block.add("($T) in.readStrongBinder()", property.type);
     } else if (type.equals(OBJECTARRAY)) {
@@ -182,7 +180,7 @@ final class Parcelables {
     else if (type.equals(PARCELABLE))
       block.add("$N.writeParcelable($N(), 0)", out, property.methodName);
     else if (type.equals(CHARSEQUENCE))
-      block.add("$N.writeCharSequence($N())", out, property.methodName);
+      block.add("$T.writeToParcel($N(), $N, 0)", TEXTUTILS, property.methodName, out);
     else if (type.equals(MAP))
       block.add("$N.writeMap($N())", out, property.methodName);
     else if (type.equals(LIST))
@@ -193,8 +191,6 @@ final class Parcelables {
       block.add("$N.writeByteArray($N())", out, property.methodName);
     else if (type.equals(STRINGARRAY))
       block.add("$N.writeStringArray($N())", out, property.methodName);
-    else if (type.equals(CHARSEQUENCEARRAY))
-      block.add("$N.writeCharSequenceArray($N())", out, property.methodName);
     else if (type.equals(IBINDER))
       block.add("$N.writeStrongBinder($N())", out, property.methodName);
     else if (type.equals(OBJECTARRAY))
@@ -244,7 +240,6 @@ final class Parcelables {
             type.equals(BOOLEANARRAY) ||
             type.equals(BYTEARRAY) ||
             type.equals(STRINGARRAY) ||
-            type.equals(CHARSEQUENCEARRAY) ||
             type.equals(IBINDER) ||
             type.equals(INTARRAY) ||
             type.equals(LONGARRAY) ||

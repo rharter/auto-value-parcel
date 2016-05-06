@@ -44,6 +44,7 @@ public class AutoValueParcelExtensionTest {
   private JavaFileObject parcelable;
   private JavaFileObject parcel;
   private JavaFileObject nullable;
+  private JavaFileObject textUtils;
 
   @Before public void setup() {
     Messager messager = new TestMessager();
@@ -131,6 +132,18 @@ public class AutoValueParcelExtensionTest {
         + "@Target({METHOD, PARAMETER, FIELD})\n"
         + "public @interface Nullable {\n"
         + "}");
+    textUtils = JavaFileObjects.forSourceString("android.text.TextUtils", ""
+        + "package android.text;\n"
+        + "import android.os.Parcel;\n"
+        + "import android.os.Parcelable;\n"
+        + "public class TextUtils {\n"
+        + "public static void writeToParcel(CharSequence cs, Parcel p, int flags) {}\n"
+        + "public static final Parcelable.Creator<CharSequence> CHAR_SEQUENCE_CREATOR\n"
+        + "= new Parcelable.Creator<CharSequence>() {\n"
+        + "@Override public CharSequence createFromParcel(Parcel in) { return null; }\n"
+        + "@Override public CharSequence[] newArray(int size) { return null; }\n"
+        + "};\n"
+        + "}\n");
   }
 
   @Test public void simple() {
@@ -596,6 +609,7 @@ public class AutoValueParcelExtensionTest {
         "import android.os.Parcel;\n" +
         "import android.os.Parcelable;\n" +
         "import android.os.PersistableBundle;\n" +
+        "import android.text.TextUtils;\n" +
         "import android.util.Size;\n" +
         "import android.util.SizeF;\n" +
         "import android.util.SparseArray;\n" +
@@ -639,7 +653,7 @@ public class AutoValueParcelExtensionTest {
         "        in.readInt() == 1,\n" +
         "        in.readInt() == 1,\n" +
         "        (Parcelable) in.readParcelable(cl),\n" +
-        "        (CharSequence) in.readCharSequence(),\n" +
+        "        TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(in),\n" +
         "        (Map<String, String>) in.readHashMap(cl),\n" +
         "        (List<String>) in.readArrayList(cl),\n" +
         "        in.createBooleanArray(),\n" +
@@ -691,7 +705,7 @@ public class AutoValueParcelExtensionTest {
         "    dest.writeInt(h() ? 1 : 0);\n" +
         "    dest.writeInt(H() ? 1 : 0);\n" +
         "    dest.writeParcelable(i(), 0);\n" +
-        "    dest.writeCharSequence(j());\n" +
+        "    TextUtils.writeToParcel(j(), dest, 0);\n" +
         "    dest.writeMap(k());\n" +
         "    dest.writeList(l());\n" +
         "    dest.writeBooleanArray(m());\n" +
@@ -727,7 +741,7 @@ public class AutoValueParcelExtensionTest {
         "}");
 
     assertAbout(javaSources())
-        .that(Arrays.asList(nullable, parcel, parcelable, parcelable1, foobinder, source))
+        .that(Arrays.asList(nullable, parcel, parcelable, textUtils, parcelable1, foobinder, source))
         .processedWith(new AutoValueProcessor())
         .compilesWithoutError()
         .and()
@@ -1073,6 +1087,7 @@ public class AutoValueParcelExtensionTest {
             "import android.os.Parcel;\n" +
             "import android.os.Parcelable;\n" +
             "import android.os.PersistableBundle;\n" +
+            "import android.text.TextUtils;\n" +
             "import android.util.Size;\n" +
             "import android.util.SizeF;\n" +
             "import java.io.Serializable;\n" +
@@ -1093,7 +1108,7 @@ public class AutoValueParcelExtensionTest {
             "          in.readLong(),\n" +
             "          in.readFloat(),\n" +
             "          in.readDouble(),\n" +
-            "          (CharSequence) in.readCharSequence(),\n" +
+            "          TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(in),\n" +
             "          (IBinder) in.readStrongBinder(),\n" +
             "          in.readString(),\n" +
             "          in.readInt() == 1,\n" +
@@ -1125,7 +1140,7 @@ public class AutoValueParcelExtensionTest {
             "    dest.writeLong(d());\n" +
             "    dest.writeFloat(e());\n" +
             "    dest.writeDouble(f());\n" +
-            "    dest.writeCharSequence(g());\n" +
+            "    TextUtils.writeToParcel(g(), dest, 0);\n" +
             "    dest.writeStrongBinder(i());\n" +
             "    dest.writeString(j());\n" +
             "    dest.writeInt(k() ? 1 : 0);\n" +
@@ -1146,7 +1161,7 @@ public class AutoValueParcelExtensionTest {
             "}");
 
     assertAbout(javaSources())
-            .that(Arrays.asList(parcel, parcelable, source))
+            .that(Arrays.asList(parcel, parcelable, textUtils, source))
             .processedWith(new AutoValueProcessor())
             .compilesWithoutError()
             .and()
