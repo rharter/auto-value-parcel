@@ -122,10 +122,10 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     ImmutableList<Property> properties = readProperties(context.properties());
     validateProperties(env, properties);
 
-    TypeName type = ClassName.bestGuess(className);
+    TypeName type = ClassName.get(context.packageName(), className);
     TypeSpec.Builder subclass = TypeSpec.classBuilder(className)
         .addModifiers(Modifier.FINAL)
-        .superclass(TypeVariableName.get(classToExtend))
+        .superclass(ClassName.get(context.packageName(), classToExtend))
         .addMethod(generateConstructor(properties))
         .addField(generateCreator(env, properties, type))
         .addMethod(generateWriteToParcel(env, properties));
