@@ -104,7 +104,11 @@ final class Parcelables {
     } else if (type.equals(TypeName.BOOLEAN) || type.equals(TypeName.BOOLEAN.box())) {
       block.add("in.readInt() == 1");
     } else if (type.equals(PARCELABLE)) {
-      block.add("($T) in.readParcelable(cl)", property.type);
+      if (property.type.equals(PARCELABLE)) {
+        block.add("in.readParcelable(cl)");
+      } else {
+        block.add("($T) in.readParcelable(cl)", property.type);
+      }
     } else if (type.equals(CHARSEQUENCE)) {
       block.add("$T.CHAR_SEQUENCE_CREATOR.createFromParcel(in)", TEXTUTILS);
     } else if (type.equals(MAP)) {
@@ -120,7 +124,11 @@ final class Parcelables {
     } else if (type.equals(STRINGARRAY)) {
       block.add("in.readStringArray()");
     } else if (type.equals(IBINDER)) {
-      block.add("($T) in.readStrongBinder()", property.type);
+      if (property.type.equals(IBINDER)) {
+        block.add("in.readStrongBinder()");
+      } else {
+        block.add("($T) in.readStrongBinder()", property.type);
+      }
     } else if (type.equals(OBJECTARRAY)) {
       block.add("in.readArray(cl)");
     } else if (type.equals(INTARRAY)) {
@@ -128,9 +136,17 @@ final class Parcelables {
     } else if (type.equals(LONGARRAY)) {
       block.add("in.createLongArray()");
     } else if (type.equals(SERIALIZABLE)) {
-      block.add("($T) in.readSerializable()", property.type);
+      if (property.type.equals(SERIALIZABLE)) {
+        block.add("in.readSerializable()");
+      } else {
+        block.add("($T) in.readSerializable()", property.type);
+      }
     } else if (type.equals(PARCELABLEARRAY)) {
-      block.add("($T) in.readParcelableArray(cl)", property.type);
+      if (property.type.equals(ArrayTypeName.of(PARCELABLE))) {
+        block.add("in.readParcelableArray(cl)");
+      } else {
+        block.add("($T) in.readParcelableArray(cl)", property.type);
+      }
     } else if (type.equals(SPARSEARRAY)) {
       block.add("in.readSparseArray(cl)");
     } else if (type.equals(SPARSEBOOLEANARRAY)) {

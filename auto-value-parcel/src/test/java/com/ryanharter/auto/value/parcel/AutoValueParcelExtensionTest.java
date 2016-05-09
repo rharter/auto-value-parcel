@@ -658,7 +658,7 @@ public class AutoValueParcelExtensionTest {
         "        in.readDouble(),\n" +
         "        in.readInt() == 1,\n" +
         "        in.readInt() == 1,\n" +
-        "        (Parcelable) in.readParcelable(cl),\n" +
+        "        in.readParcelable(cl),\n" +
         "        TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(in),\n" +
         "        (Map<String, String>) in.readHashMap(cl),\n" +
         "        (List<String>) in.readArrayList(cl),\n" +
@@ -666,7 +666,7 @@ public class AutoValueParcelExtensionTest {
         "        in.createByteArray(),\n" +
         "        in.createIntArray(),\n" +
         "        in.createLongArray(),\n" +
-        "        (Serializable) in.readSerializable(),\n" +
+        "        in.readSerializable(),\n" +
         "        in.readSparseArray(cl),\n" +
         "        in.readSparseBooleanArray(),\n" +
         "        in.readBundle(cl),\n" +
@@ -1121,14 +1121,14 @@ public class AutoValueParcelExtensionTest {
             "          in.readFloat(),\n" +
             "          in.readDouble(),\n" +
             "          TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(in),\n" +
-            "          (IBinder) in.readStrongBinder(),\n" +
+            "          in.readStrongBinder(),\n" +
             "          in.readString(),\n" +
             "          in.readInt() == 1,\n" +
             "          in.createBooleanArray(),\n" +
             "          in.createByteArray(),\n" +
             "          in.createIntArray(),\n" +
             "          in.createLongArray(),\n" +
-            "          (Serializable) in.readSerializable(),\n" +
+            "          in.readSerializable(),\n" +
             "          in.readSize(),\n" +
             "          in.readSizeF(),\n" +
             "          in.readPersistableBundle(cl)\n" +
