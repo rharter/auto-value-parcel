@@ -866,6 +866,99 @@ public class AutoValueParcelExtensionTest {
         .generatesSources(expected);
   }
 
+  @Test public void handlesNullableWithParcelTypeAdapter() throws Exception {
+    JavaFileObject bar = JavaFileObjects.forSourceString("test.Bar", ""
+        + "package test;\n"
+        + "import java.util.Date;\n"
+        + "public class Bar {\n"
+        + "  public Date date;\n"
+        + "  public boolean valid;\n"
+        + "  public Bar(Date date, boolean valid) {\n"
+        + "    this.date = date;\n"
+        + "    this.valid = valid;\n"
+        + "  }\n"
+        + "}");
+    JavaFileObject barAdapter = JavaFileObjects.forSourceString("test.BarTypeAdapter", ""
+        + "package test;\n"
+        + "import android.os.Parcel;\n"
+        + "import java.util.Date;\n"
+        + "import com.ryanharter.auto.value.parcel.TypeAdapter;\n"
+        + "public class BarTypeAdapter implements TypeAdapter<Bar> {\n"
+        + "\n"
+        + "  public Bar fromParcel(Parcel in) {\n"
+        + "    return new Bar(\n"
+        + "        new Date(in.readLong()),\n"
+        + "        in.readInt() == 1);\n"
+        + "  }\n"
+        + "\n"
+        + "  public void toParcel(Bar value, Parcel dest) {\n"
+        + "    dest.writeLong(value.date.getTime());\n"
+        + "    dest.writeInt(value.valid ? 1 : 0);\n"
+        + "  }\n"
+        + "}\n");
+    JavaFileObject foo = JavaFileObjects.forSourceString("test.Foo", ""
+        + "package test;\n"
+        + "import android.os.Parcelable;\n"
+        + "import com.google.auto.value.AutoValue;\n"
+        + "import com.ryanharter.auto.value.parcel.ParcelAdapter;\n"
+        + "@AutoValue public abstract class Foo implements Parcelable {\n"
+        + "  @Nullable @ParcelAdapter(BarTypeAdapter.class) public abstract Bar barNullable();\n"
+        + "  @ParcelAdapter(BarTypeAdapter.class) public abstract Bar barNonNullable();\n"
+        + "}\n");
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test/AutoValue_Foo", ""
+        + "package test;\n"
+        + "\n"
+        + "import android.os.Parcel;\n"
+        + "import android.os.Parcelable;\n"
+        + "import java.lang.Override;\n"
+        + "\n"
+        + "final class AutoValue_Foo extends $AutoValue_Foo {\n"
+        + "  public static final Parcelable.Creator<AutoValue_Foo> CREATOR = new Parcelable.Creator<AutoValue_Foo>() {\n"
+        + "    @Override\n"
+        + "    public AutoValue_Foo createFromParcel(Parcel in) {\n"
+        + "      BarTypeAdapter barTypeAdapter = new BarTypeAdapter();\n"
+        + "      return new AutoValue_Foo(\n"
+        + "        in.readInt() == 0 ? barTypeAdapter.fromParcel(in) : null,\n"
+        + "        barTypeAdapter.fromParcel(in)\n"
+        + "      );\n"
+        + "    }\n"
+        + "    @Override\n"
+        + "    public AutoValue_Foo[] newArray(int size) {\n"
+        + "      return new AutoValue_Foo[size];\n"
+        + "    }\n"
+        + "  };\n"
+        + "\n"
+        + "  AutoValue_Foo(Bar barNullable, Bar barNonNullable) {\n"
+        + "    super(barNullable, barNonNullable);\n"
+        + "  }\n"
+        + "\n"
+        + "  @Override\n"
+        + "  public void writeToParcel(Parcel dest, int flags) {\n"
+        + "    BarTypeAdapter barTypeAdapter = new BarTypeAdapter();\n"
+        + "    if (barNullable() == null) {\n"
+        + "      dest.writeInt(1);\n"
+        + "    } else {\n"
+        + "      dest.writeInt(0);\n"
+        + "      barTypeAdapter.toParcel(barNullable(), dest);\n"
+        + "    }\n"
+        + "    barTypeAdapter.toParcel(barNonNullable(), dest);\n"
+        + "  }\n"
+        + "\n"
+        + "  @Override\n"
+        + "  public int describeContents() {\n"
+        + "    return 0;\n"
+        + "  }\n"
+        + "}\n");
+
+    assertAbout(javaSources())
+        .that(Arrays.asList(nullable, parcel, parcelable, bar, barAdapter, foo))
+        .processedWith(new AutoValueProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
   @Test public void acceptsParcelableSubclassesTwiceRemoved() throws Exception {
     JavaFileObject source1 = JavaFileObjects.forSourceString("test.SafeParcelable", ""
         + "package test;\n"
