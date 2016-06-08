@@ -252,12 +252,12 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     for (int i = 0, n = properties.size(); i < n; i++) {
       Property property = properties.get(i);
       if (typeAdapters.containsKey(property)) {
-        Parcelables.appendReadValueWithTypeAdapter(ctorCall, property, typeAdapters.get(property));
+        Parcelables.readValueWithTypeAdapter(ctorCall, property, typeAdapters.get(property));
       } else {
         final TypeName typeName = Parcelables.getTypeNameFromProperty(property, typeUtils);
         requiresClassLoader |= Parcelables.isTypeRequiresClassLoader(typeName);
         requiresSuppressWarnings |= Parcelables.isTypeRequiresSuppressWarnings(typeName);
-        Parcelables.appendReadValue(ctorCall, property, typeName);
+        Parcelables.readValue(ctorCall, property, typeName);
       }
 
       if (i < n - 1) ctorCall.add(",");

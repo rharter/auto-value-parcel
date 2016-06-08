@@ -81,7 +81,7 @@ final class Parcelables {
   }
 
   /** Returns true if the code added to {@code block} requires a {@code ClassLoader cl} local. */
-  static void appendReadValue(CodeBlock.Builder block, AutoValueParcelExtension.Property property, final TypeName type) {
+  static void readValue(CodeBlock.Builder block, AutoValueParcelExtension.Property property, final TypeName type) {
     if (property.nullable()){
       block.add("in.readInt() == 0 ? ");
     }
@@ -169,7 +169,7 @@ final class Parcelables {
     }
   }
 
-  static void appendReadValueWithTypeAdapter(CodeBlock.Builder block, AutoValueParcelExtension.Property property, final FieldSpec adapter) {
+  static void readValueWithTypeAdapter(CodeBlock.Builder block, AutoValueParcelExtension.Property property, final FieldSpec adapter) {
     if (property.nullable()){
       block.add("in.readInt() == 0 ? ");
     }
