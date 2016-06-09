@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableSet;
 import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
@@ -80,7 +81,7 @@ final class Parcelables {
   }
 
   /** Returns true if the code added to {@code block} requires a {@code ClassLoader cl} local. */
-  static void appendReadValue(CodeBlock.Builder block, AutoValueParcelExtension.Property property, final TypeName type) {
+  static void readValue(CodeBlock.Builder block, AutoValueParcelExtension.Property property, final TypeName type) {
     if (property.nullable()){
       block.add("in.readInt() == 0 ? ");
     }
@@ -168,6 +169,18 @@ final class Parcelables {
     }
   }
 
+  static void readValueWithTypeAdapter(CodeBlock.Builder block, AutoValueParcelExtension.Property property, final FieldSpec adapter) {
+    if (property.nullable()){
+      block.add("in.readInt() == 0 ? ");
+    }
+
+    block.add("$N.fromParcel(in)", adapter);
+
+    if (property.nullable()){
+      block.add(" : null");
+    }
+  }
+
   public static CodeBlock writeValue(Types types, AutoValueParcelExtension.Property property, ParameterSpec out) {
     CodeBlock.Builder block = CodeBlock.builder();
 
@@ -244,6 +257,25 @@ final class Parcelables {
       block.add("$N.writeValue($N())", out, property.methodName);
 
     block.add(";\n");
+
+    if (property.nullable()) {
+      block.endControlFlow();
+    }
+
+    return block.build();
+  }
+
+  public static CodeBlock writeValueWithTypeAdapter(FieldSpec adapter, AutoValueParcelExtension.Property property, ParameterSpec out) {
+    CodeBlock.Builder block = CodeBlock.builder();
+
+    if (property.nullable()) {
+      block.beginControlFlow("if ($N() == null)", property.methodName);
+      block.addStatement("$N.writeInt(1)", out);
+      block.nextControlFlow("else");
+      block.addStatement("$N.writeInt(0)", out);
+    }
+
+    block.addStatement("$N.toParcel($N(), $N)", adapter, property.methodName, out);
 
     if (property.nullable()) {
       block.endControlFlow();
