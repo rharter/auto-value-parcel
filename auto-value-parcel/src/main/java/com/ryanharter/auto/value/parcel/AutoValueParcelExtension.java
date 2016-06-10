@@ -24,6 +24,7 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -351,7 +352,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
       .build();
   }
   private ImmutableMap<TypeMirror, FieldSpec> getTypeAdapters(List<Property> properties) {
-    Map<TypeMirror, FieldSpec> typeAdapters = new HashMap<>();
+    Map<TypeMirror, FieldSpec> typeAdapters = new LinkedHashMap<>();
     NameAllocator nameAllocator = new NameAllocator();
     nameAllocator.newName("CREATOR");
     for (Property property : properties) {
