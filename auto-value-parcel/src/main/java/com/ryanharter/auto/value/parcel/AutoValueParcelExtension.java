@@ -4,6 +4,7 @@ import com.google.auto.common.MoreElements;
 import com.google.auto.common.MoreTypes;
 import com.google.auto.service.AutoService;
 import com.google.auto.value.extension.AutoValueExtension;
+import com.google.common.base.CaseFormat;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -21,14 +22,18 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
-import com.squareup.javapoet.TypeVariableName;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.*;
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeKind;
@@ -37,6 +42,12 @@ import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
+
+import static javax.lang.model.element.Modifier.ABSTRACT;
+import static javax.lang.model.element.Modifier.PRIVATE;
+import static javax.lang.model.element.Modifier.PUBLIC;
+import static javax.lang.model.element.Modifier.STATIC;
+import static javax.lang.model.element.Modifier.FINAL;
 
 @AutoService(AutoValueExtension.class)
 public final class AutoValueParcelExtension extends AutoValueExtension {
@@ -122,13 +133,22 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     ImmutableList<Property> properties = readProperties(context.properties());
     validateProperties(env, properties);
 
+    ImmutableMap<TypeMirror, FieldSpec> typeAdapters = getTypeAdapters(properties);
+
     TypeName type = ClassName.get(context.packageName(), className);
     TypeSpec.Builder subclass = TypeSpec.classBuilder(className)
-        .addModifiers(Modifier.FINAL)
+        .addModifiers(FINAL)
         .superclass(ClassName.get(context.packageName(), classToExtend))
         .addMethod(generateConstructor(properties))
-        .addField(generateCreator(env, properties, type))
-        .addMethod(generateWriteToParcel(env, properties));
+        .addMethod(generateWriteToParcel(env, properties, typeAdapters));
+
+    if (!typeAdapters.isEmpty()) {
+      for (FieldSpec field : typeAdapters.values()) {
+        subclass.addField(field);
+      }
+    }
+
+    subclass.addField(generateCreator(env, properties, type, typeAdapters));
 
     if (needsContentDescriptor(context)) {
       subclass.addMethod(generateDescribeContents());
@@ -145,7 +165,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
       if (element.getSimpleName().contentEquals("describeContents")
           && MoreTypes.isTypeOf(int.class, element.getReturnType())
           && element.getParameters().isEmpty()
-          && !element.getModifiers().contains(Modifier.ABSTRACT)) {
+          && !element.getModifiers().contains(ABSTRACT)) {
         return false;
       }
     }
@@ -159,7 +179,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
         context.autoValueClass(), env.getElementUtils())) {
       if (element.getSimpleName().contentEquals("writeToParcel")
           && MoreTypes.isTypeOf(void.class, element.getReturnType())
-          && !element.getModifiers().contains(Modifier.ABSTRACT)) {
+          && !element.getModifiers().contains(ABSTRACT)) {
         List<? extends VariableElement> parameters = element.getParameters();
         if (parameters.size() == 2
             && env.getTypeUtils().isSameType(parcel, parameters.get(0).asType())
@@ -180,7 +200,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     for (VariableElement field : ElementFilter.fieldsIn(members)) {
       if (field.getSimpleName().contentEquals("CREATOR")
           && typeUtils.isSameType(creatorType, typeUtils.erasure(field.asType()))
-          && field.getModifiers().contains(Modifier.STATIC)) {
+          && field.getModifiers().contains(STATIC)) {
         return field;
       }
     }
@@ -238,11 +258,11 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     return builder.build();
   }
 
-  FieldSpec generateCreator(ProcessingEnvironment env, List<Property> properties, TypeName type) {
+  FieldSpec generateCreator(ProcessingEnvironment env, List<Property> properties, TypeName type,
+      Map<TypeMirror, FieldSpec> typeAdapters) {
     ClassName creator = ClassName.bestGuess("android.os.Parcelable.Creator");
     TypeName creatorOfClass = ParameterizedTypeName.get(creator, type);
 
-    ImmutableMap<Property, FieldSpec> typeAdapters = getTypeAdapters(properties);
     Types typeUtils = env.getTypeUtils();
     CodeBlock.Builder ctorCall = CodeBlock.builder();
     ctorCall.add("return new $T(\n", type);
@@ -251,8 +271,9 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     boolean requiresSuppressWarnings = false;
     for (int i = 0, n = properties.size(); i < n; i++) {
       Property property = properties.get(i);
-      if (typeAdapters.containsKey(property)) {
-        Parcelables.readValueWithTypeAdapter(ctorCall, property, typeAdapters.get(property));
+      if (property.typeAdapter != null && typeAdapters.containsKey(property.typeAdapter)) {
+        Parcelables.readValueWithTypeAdapter(ctorCall, property,
+            typeAdapters.get(property.typeAdapter));
       } else {
         final TypeName typeName = Parcelables.getTypeNameFromProperty(property, typeUtils);
         requiresClassLoader |= Parcelables.isTypeRequiresClassLoader(typeName);
@@ -272,15 +293,11 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
       createFromParcel.addAnnotation(createSuppressUncheckedWarningAnnotation());
     }
     createFromParcel
-        .addModifiers(Modifier.PUBLIC)
+        .addModifiers(PUBLIC)
         .returns(type)
         .addParameter(ClassName.bestGuess("android.os.Parcel"), "in");
     if (requiresClassLoader) {
       createFromParcel.addStatement("$T cl = $T.class.getClassLoader()", ClassLoader.class, type);
-    }
-    ImmutableSet<FieldSpec> adapters = ImmutableSet.copyOf(typeAdapters.values());
-    for (FieldSpec field : adapters) {
-      createFromParcel.addStatement("$T $N = new $T()", field.type, field, field.type);
     }
     createFromParcel.addCode(ctorCall.build());
 
@@ -290,7 +307,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
             .build())
         .addMethod(MethodSpec.methodBuilder("newArray")
             .addAnnotation(Override.class)
-            .addModifiers(Modifier.PUBLIC)
+            .addModifiers(PUBLIC)
             .returns(ArrayTypeName.of(type))
             .addParameter(int.class, "size")
             .addStatement("return new $T[size]", type)
@@ -298,13 +315,13 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
         .build();
 
     return FieldSpec
-        .builder(creatorOfClass, "CREATOR", Modifier.PUBLIC,
-            Modifier.FINAL, Modifier.STATIC)
+        .builder(creatorOfClass, "CREATOR", PUBLIC, FINAL, STATIC)
         .initializer("$L", creatorImpl)
         .build();
   }
 
-  MethodSpec generateWriteToParcel(ProcessingEnvironment env, List<Property> properties) {
+  MethodSpec generateWriteToParcel(ProcessingEnvironment env, List<Property> properties,
+      Map<TypeMirror, FieldSpec> typeAdapters) {
     ParameterSpec dest = ParameterSpec
         .builder(ClassName.get("android.os", "Parcel"), "dest")
         .build();
@@ -314,16 +331,12 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
         .addParameter(dest)
         .addParameter(int.class, "flags");
 
-    ImmutableMap<Property, FieldSpec> typeAdapters = getTypeAdapters(properties);
-    ImmutableSet<FieldSpec> adapters = ImmutableSet.copyOf(typeAdapters.values());
-    for (FieldSpec field : adapters) {
-      builder.addStatement("$T $N = new $T()", field.type, field, field.type);
-    }
 
     Types typeUtils = env.getTypeUtils();
     for (Property p : properties) {
-      if (typeAdapters.containsKey(p)) {
-        builder.addCode(Parcelables.writeValueWithTypeAdapter(typeAdapters.get(p), p, dest));
+      if (p.typeAdapter != null && typeAdapters.containsKey(p.typeAdapter)) {
+        FieldSpec typeAdapter = typeAdapters.get(p.typeAdapter);
+        builder.addCode(Parcelables.writeValueWithTypeAdapter(typeAdapter, p, dest));
       } else {
         builder.addCode(Parcelables.writeValue(typeUtils, p, dest));
       }
@@ -337,16 +350,16 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
       .addMember("value", "\"unchecked\"")
       .build();
   }
-  private ImmutableMap<Property, FieldSpec> getTypeAdapters(List<Property> properties) {
-    Map<Property, FieldSpec> typeAdapters = new HashMap<>();
+  private ImmutableMap<TypeMirror, FieldSpec> getTypeAdapters(List<Property> properties) {
+    Map<TypeMirror, FieldSpec> typeAdapters = new HashMap<>();
     for (Property property : properties) {
-      if (property.typeAdapter != null && !typeAdapters.containsKey(property)) {
+      if (property.typeAdapter != null && !typeAdapters.containsKey(property.typeAdapter)) {
         ClassName typeName = (ClassName) TypeName.get(property.typeAdapter);
-        String name = Character.toLowerCase(typeName.simpleName().charAt(0))
-            + typeName.simpleName().substring(1);
+        String name = CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, typeName.simpleName());
 
-        typeAdapters.put(property, FieldSpec.builder(
-            typeName, NameAllocator.toJavaIdentifier(name)).build());
+        typeAdapters.put(property.typeAdapter, FieldSpec.builder(
+            typeName, NameAllocator.toJavaIdentifier(name), PRIVATE, STATIC, FINAL)
+            .initializer("new $T()", typeName).build());
       }
     }
     return ImmutableMap.copyOf(typeAdapters);
@@ -355,7 +368,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
   MethodSpec generateDescribeContents() {
     return MethodSpec.methodBuilder("describeContents")
         .addAnnotation(Override.class)
-        .addModifiers(Modifier.PUBLIC)
+        .addModifiers(PUBLIC)
         .returns(int.class)
         .addStatement("return 0")
         .build();
