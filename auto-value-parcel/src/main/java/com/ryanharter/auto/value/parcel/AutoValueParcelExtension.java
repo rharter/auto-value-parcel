@@ -352,10 +352,13 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
   }
   private ImmutableMap<TypeMirror, FieldSpec> getTypeAdapters(List<Property> properties) {
     Map<TypeMirror, FieldSpec> typeAdapters = new HashMap<>();
+    NameAllocator nameAllocator = new NameAllocator();
+    nameAllocator.newName("CREATOR");
     for (Property property : properties) {
       if (property.typeAdapter != null && !typeAdapters.containsKey(property.typeAdapter)) {
         ClassName typeName = (ClassName) TypeName.get(property.typeAdapter);
         String name = CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, typeName.simpleName());
+        name = nameAllocator.newName(name, typeName);
 
         typeAdapters.put(property.typeAdapter, FieldSpec.builder(
             typeName, NameAllocator.toJavaIdentifier(name), PRIVATE, STATIC, FINAL)
