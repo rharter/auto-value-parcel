@@ -1418,20 +1418,24 @@ public class AutoValueParcelExtensionTest {
       this.properties = properties;
     }
 
-    public ProcessingEnvironment processingEnvironment() {
+    @Override public ProcessingEnvironment processingEnvironment() {
       return processingEnvironment;
     }
 
-    public String packageName() {
+    @Override public String packageName() {
       return packageName;
     }
 
-    public TypeElement autoValueClass() {
+    @Override public TypeElement autoValueClass() {
       return autoValueClass;
     }
 
-    public Map<String, ExecutableElement> properties() {
+    @Override public Map<String, ExecutableElement> properties() {
       return properties;
+    }
+
+    @Override public Set<ExecutableElement> abstractMethods() {
+      return null;
     }
   }
 
