@@ -15,6 +15,7 @@ import android.os.Parcelable;
 
 import com.ryanharter.auto.value.parcel.util.TestMessager;
 import com.ryanharter.auto.value.parcel.util.TestProcessingEnvironment;
+import java.util.Collections;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -1435,7 +1436,7 @@ public class AutoValueParcelExtensionTest {
     }
 
     @Override public Set<ExecutableElement> abstractMethods() {
-      return null;
+      return Collections.emptySet();
     }
   }
 
