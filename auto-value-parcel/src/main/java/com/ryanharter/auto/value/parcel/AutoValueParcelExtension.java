@@ -117,13 +117,33 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
   }
 
   @Override
-  public Set<String> consumeProperties(Context context) {
-    return Sets.newHashSet("describeContents", "writeToParcel");
+  public boolean mustBeFinal(Context context) {
+    return true;
   }
 
   @Override
-  public boolean mustBeFinal(Context context) {
-    return true;
+  public Set<String> consumeProperties(Context context) {
+    ImmutableSet.Builder<String> properties = new ImmutableSet.Builder<>();
+    for (String property : context.properties().keySet()) {
+      switch (property) {
+        case "describeContents":
+          properties.add(property);
+          break;
+      }
+    }
+    return properties.build();
+  }
+
+  @Override public Set<ExecutableElement> consumeMethods(Context context) {
+    ImmutableSet.Builder<ExecutableElement> methods = new ImmutableSet.Builder<>();
+    for (ExecutableElement element : context.abstractMethods()) {
+      switch (element.getSimpleName().toString()) {
+        case "writeToParcel":
+          methods.add(element);
+          break;
+      }
+    }
+    return methods.build();
   }
 
   @Override
