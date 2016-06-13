@@ -1,5 +1,14 @@
 # Change Log
 
+## Version 0.2.3-rc1 (2016-06-13)
+
+Supports: AutoValue 1.3-rc1
+
+* Updates extension to support AutoValue 1.3-rc1
+* Fixes issue when using multiple TypeAdapters of the same name
+* Uses constant TypeAdapters instead of recreating them for each type
+* Fix for `@Nullable` properties with TypeAdapter (fixes #66) 
+
 ## Version 0.2.2 (2016-05-26)
 
 Supports: AutoValue 1.2
