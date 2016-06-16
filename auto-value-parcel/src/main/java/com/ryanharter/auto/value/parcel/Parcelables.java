@@ -10,6 +10,7 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import java.util.List;
 import java.util.Set;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
@@ -42,6 +43,7 @@ final class Parcelables {
   private static final TypeName SIZE = ClassName.get("android.util", "Size");
   private static final TypeName SIZEF = ClassName.get("android.util", "SizeF");
   private static final TypeName TEXTUTILS = ClassName.get("android.text", "TextUtils");
+  private static final TypeName ENUM = ClassName.get(Enum.class);
 
   private static final Set<TypeName> VALID_TYPES = ImmutableSet.of(STRING, MAP, LIST, BOOLEANARRAY,
       BYTEARRAY, CHARARRAY, INTARRAY, LONGARRAY, STRINGARRAY, SPARSEARRAY, SPARSEBOOLEANARRAY,
@@ -208,6 +210,8 @@ final class Parcelables {
       block.add("in.readSize()");
     } else if (parcelableType.equals(SIZEF)) {
       block.add("in.readSizeF()");
+    } else if (parcelableType.equals(ENUM)) {
+      block.add("$T.valueOf(in.readString())", property.type);
     } else {
       block.add("($T) in.readValue($T.class.getClassLoader())", property.type,
           getParcelableComponent(types, property.element.getReturnType()));
@@ -302,6 +306,8 @@ final class Parcelables {
       block.add("$N.writeSize($N())", out, property.methodName);
     else if (type.equals(SIZEF))
       block.add("$N.writeSizeF($N())", out, property.methodName);
+    else if (type.equals(ENUM))
+      block.add("$N.writeString($N().name())", out, property.methodName);
     else
       block.add("$N.writeValue($N())", out, property.methodName);
 
@@ -334,8 +340,16 @@ final class Parcelables {
   }
 
   static TypeName getTypeNameFromProperty(AutoValueParcelExtension.Property property, Types types) {
-    TypeElement element = (TypeElement) types.asElement(property.element.getReturnType());
-    return element != null ? getParcelableType(types, element) : property.type;
+    TypeMirror returnType = property.element.getReturnType();
+    TypeElement element = (TypeElement) types.asElement(returnType);
+    if (element != null) {
+      TypeName parcelableType = getParcelableType(types, element);
+      if (!PARCELABLE.equals(parcelableType) && element.getKind() == ElementKind.ENUM) {
+        return ENUM;
+      }
+      return parcelableType;
+    }
+    return property.type;
   }
 
   static boolean isTypeRequiresSuppressWarnings(TypeName type) {
