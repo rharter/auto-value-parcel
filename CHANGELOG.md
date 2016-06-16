@@ -1,5 +1,12 @@
 # Change Log
 
+## Version 0.2.3-rc2 (2016-06-15)
+
+Supports: AutoValue 1.3-rc2
+
+* Updates extension to support AutoValue 1.3-rc2
+* Fixes issue causing incorrect ClassLoader to be used 
+
 ## Version 0.2.3-rc1 (2016-06-13)
 
 Supports: AutoValue 1.3-rc1
