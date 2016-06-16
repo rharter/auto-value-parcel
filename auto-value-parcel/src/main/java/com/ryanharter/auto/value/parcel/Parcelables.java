@@ -148,7 +148,7 @@ final class Parcelables {
         block.add("in.readParcelable($T.class.getClassLoader())",
             getParcelableComponent(types, property.element.getReturnType()));
       } else {
-        block.add("($T) in.readParcelable($T.class.getClassLoader())", property.type,
+        block.add("$T.CREATOR.createFromParcel(in)",
             getParcelableComponent(types, property.element.getReturnType()));
       }
     } else if (parcelableType.equals(CHARSEQUENCE)) {
@@ -263,7 +263,7 @@ final class Parcelables {
     else if (type.equals(TypeName.BOOLEAN) || type.equals(TypeName.BOOLEAN.box()))
       block.add("$N.writeInt($N() ? 1 : 0)", out, property.methodName);
     else if (type.equals(PARCELABLE))
-      block.add("$N.writeParcelable($N(), 0)", out, property.methodName);
+      block.add("$N().writeToParcel($N, 0)", property.methodName, out);
     else if (type.equals(CHARSEQUENCE))
       block.add("$T.writeToParcel($N(), $N, 0)", TEXTUTILS, property.methodName, out);
     else if (type.equals(MAP))
