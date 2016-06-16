@@ -9,7 +9,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
@@ -23,7 +22,6 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,10 +43,10 @@ import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 
 import static javax.lang.model.element.Modifier.ABSTRACT;
+import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
-import static javax.lang.model.element.Modifier.FINAL;
 
 @AutoService(AutoValueExtension.class)
 public final class AutoValueParcelExtension extends AutoValueExtension {
@@ -341,12 +339,12 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     ParameterSpec dest = ParameterSpec
         .builder(ClassName.get("android.os", "Parcel"), "dest")
         .build();
+    ParameterSpec flags = ParameterSpec.builder(int.class, "flags").build();
     MethodSpec.Builder builder = MethodSpec.methodBuilder("writeToParcel")
         .addAnnotation(Override.class)
         .addModifiers(Modifier.PUBLIC)
         .addParameter(dest)
-        .addParameter(int.class, "flags");
-
+        .addParameter(flags);
 
     Types typeUtils = env.getTypeUtils();
     for (Property p : properties) {
@@ -354,7 +352,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
         FieldSpec typeAdapter = typeAdapters.get(p.typeAdapter);
         builder.addCode(Parcelables.writeValueWithTypeAdapter(typeAdapter, p, dest));
       } else {
-        builder.addCode(Parcelables.writeValue(typeUtils, p, dest));
+        builder.addCode(Parcelables.writeValue(typeUtils, p, dest, flags));
       }
     }
 
