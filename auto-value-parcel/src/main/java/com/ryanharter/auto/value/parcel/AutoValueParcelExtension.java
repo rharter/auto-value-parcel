@@ -288,7 +288,6 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     CodeBlock.Builder ctorCall = CodeBlock.builder();
     ctorCall.add("return new $T(\n", type);
     ctorCall.indent().indent();
-    boolean requiresClassLoader = false;
     boolean requiresSuppressWarnings = false;
     for (int i = 0, n = properties.size(); i < n; i++) {
       Property property = properties.get(i);
@@ -297,9 +296,8 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
             typeAdapters.get(property.typeAdapter));
       } else {
         final TypeName typeName = Parcelables.getTypeNameFromProperty(property, typeUtils);
-        requiresClassLoader |= Parcelables.isTypeRequiresClassLoader(typeName);
         requiresSuppressWarnings |= Parcelables.isTypeRequiresSuppressWarnings(typeName);
-        Parcelables.readValue(ctorCall, property, typeName);
+        Parcelables.readValue(ctorCall, property, typeName, env.getTypeUtils());
       }
 
       if (i < n - 1) ctorCall.add(",");
@@ -317,9 +315,6 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
         .addModifiers(PUBLIC)
         .returns(type)
         .addParameter(ClassName.bestGuess("android.os.Parcel"), "in");
-    if (requiresClassLoader) {
-      createFromParcel.addStatement("$T cl = $T.class.getClassLoader()", ClassLoader.class, type);
-    }
     createFromParcel.addCode(ctorCall.build());
 
     TypeSpec creatorImpl = TypeSpec.anonymousClassBuilder("")
