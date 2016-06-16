@@ -567,6 +567,31 @@ public class AutoValueParcelExtensionTest {
         "import android.os.IBinder;\n" +
         "public class FooBinder implements IBinder {\n" +
         "}\n");
+    JavaFileObject numbersEnum = JavaFileObjects.forSourceString("test.Numbers", "" +
+        "package test;\n" +
+        "public enum Numbers {\n" +
+        "  ONE, TWO, THREE\n" +
+        "}\n");
+    JavaFileObject parcelableEnum = JavaFileObjects.forSourceString("test.Numbers2", "" +
+        "package test;\n" +
+        "import android.os.Parcelable;\n" +
+        "import android.os.Parcel;\n" +
+        "public enum Numbers2 implements Parcelable {\n" +
+        "  ONE, TWO, THREE;\n" +
+        "  public int describeContents() {" +
+        "    return 0;" +
+        "  }\n" +
+        "  public void writeToParcel(Parcel in, int flags) {" +
+        "  }\n" +
+        "  public static final Creator<Numbers2> CREATOR = new Creator<Numbers2>() {\n" +
+        "    public Numbers2 createFromParcel(Parcel in) {\n" +
+        "      return Numbers2.ONE;\n" +
+        "    }\n" +
+        "    public Numbers2[] newArray(int size) {\n" +
+        "      return new Numbers2[size];\n" +
+        "    }\n" +
+        "  };" +
+        "}\n");
     JavaFileObject source = JavaFileObjects.forSourceString("test.Foo", "" +
         "package test;\n" +
         "\n" +
@@ -620,6 +645,8 @@ public class AutoValueParcelExtensionTest {
         "  public abstract char ag();\n" +
         "  public abstract Character ah();\n" +
         "  public abstract char[] ai();\n" +
+        "  public abstract Numbers aj();\n" +
+        "  public abstract Numbers2 ak();\n" +
         "}");
 
     JavaFileObject expected = JavaFileObjects.forSourceString("test/AutoValue_Foo", "" +
@@ -691,7 +718,9 @@ public class AutoValueParcelExtensionTest {
         "        in.readInt() == 0 ? in.readInt() == 1 : null,\n" +
         "        (char) in.readInt(),\n" +
         "        (char) in.readInt(),\n" +
-        "        in.createCharArray()\n" +
+        "        in.createCharArray(),\n" +
+        "        Numbers.valueOf(in.readString()),\n" +
+        "        Numbers2.CREATOR.createFromParcel(in)\n" +
         "      );\n" +
         "    }\n" +
         "    @Override\n" +
@@ -700,8 +729,8 @@ public class AutoValueParcelExtensionTest {
         "    }\n" +
         "  };\n" +
         "\n" +
-        "  AutoValue_Foo(String a, byte b, Byte B, int c, Integer C, short d, Short D, long e, Long E, float f, Float F, double g, Double G, boolean h, Boolean H, Parcelable i, CharSequence j, Map<String, String> k, List<String> l, boolean[] m, byte[] n, int[] s, long[] t, Serializable u, SparseArray w, SparseBooleanArray x, Bundle y, PersistableBundle z, Size aa, SizeF ab, Parcelable1 ad, FooBinder ae, Boolean af, char ag, Character ah, char[] ai) {\n" +
-        "    super(a, b, B, c, C, d, D, e, E, f, F, g, G, h, H, i, j, k, l, m, n, s, t, u, w, x, y, z, aa, ab, ad, ae, af, ag, ah, ai);\n" +
+        "  AutoValue_Foo(String a, byte b, Byte B, int c, Integer C, short d, Short D, long e, Long E, float f, Float F, double g, Double G, boolean h, Boolean H, Parcelable i, CharSequence j, Map<String, String> k, List<String> l, boolean[] m, byte[] n, int[] s, long[] t, Serializable u, SparseArray w, SparseBooleanArray x, Bundle y, PersistableBundle z, Size aa, SizeF ab, Parcelable1 ad, FooBinder ae, Boolean af, char ag, Character ah, char[] ai, Numbers aj, Numbers2 ak) {\n" +
+        "    super(a, b, B, c, C, d, D, e, E, f, F, g, G, h, H, i, j, k, l, m, n, s, t, u, w, x, y, z, aa, ab, ad, ae, af, ag, ah, ai, aj, ak);\n" +
         "  }\n" +
         "\n" +
         "  @Override\n" +
@@ -757,6 +786,8 @@ public class AutoValueParcelExtensionTest {
         "    dest.writeInt(ag());\n" +
         "    dest.writeInt(ah());\n" +
         "    dest.writeCharArray(ai());\n" +
+        "    dest.writeString(aj().name());\n" +
+        "    ak().writeToParcel(dest, 0);\n" +
         "  }\n" +
         "\n" +
         "  @Override\n" +
@@ -766,7 +797,7 @@ public class AutoValueParcelExtensionTest {
         "}");
 
     assertAbout(javaSources())
-        .that(Arrays.asList(nullable, parcel, parcelable, textUtils, parcelable1, foobinder, source))
+        .that(Arrays.asList(nullable, parcel, parcelable, textUtils, parcelable1, foobinder, numbersEnum, parcelableEnum, source))
         .processedWith(new AutoValueProcessor())
         .compilesWithoutError()
         .and()
