@@ -234,7 +234,8 @@ final class Parcelables {
     }
   }
 
-  public static CodeBlock writeValue(Types types, AutoValueParcelExtension.Property property, ParameterSpec out) {
+  public static CodeBlock writeValue(Types types, AutoValueParcelExtension.Property property,
+      ParameterSpec out, ParameterSpec flags) {
     CodeBlock.Builder block = CodeBlock.builder();
 
     if (property.nullable()) {
@@ -267,9 +268,9 @@ final class Parcelables {
     else if (type.equals(TypeName.BOOLEAN) || type.equals(TypeName.BOOLEAN.box()))
       block.add("$N.writeInt($N() ? 1 : 0)", out, property.methodName);
     else if (type.equals(PARCELABLE))
-      block.add("$N().writeToParcel($N, 0)", property.methodName, out);
+      block.add("$N().writeToParcel($N, $N)", property.methodName, out, flags);
     else if (type.equals(CHARSEQUENCE))
-      block.add("$T.writeToParcel($N(), $N, 0)", TEXTUTILS, property.methodName, out);
+      block.add("$T.writeToParcel($N(), $N, $N)", TEXTUTILS, property.methodName, out, flags);
     else if (type.equals(MAP))
       block.add("$N.writeMap($N())", out, property.methodName);
     else if (type.equals(LIST))

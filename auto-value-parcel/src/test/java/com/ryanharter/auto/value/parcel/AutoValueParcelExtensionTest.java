@@ -755,8 +755,8 @@ public class AutoValueParcelExtensionTest {
         "    dest.writeDouble(G());\n" +
         "    dest.writeInt(h() ? 1 : 0);\n" +
         "    dest.writeInt(H() ? 1 : 0);\n" +
-        "    i().writeToParcel(dest, 0);\n" +
-        "    TextUtils.writeToParcel(j(), dest, 0);\n" +
+        "    i().writeToParcel(dest, flags);\n" +
+        "    TextUtils.writeToParcel(j(), dest, flags);\n" +
         "    dest.writeMap(k());\n" +
         "    dest.writeList(l());\n" +
         "    dest.writeBooleanArray(m());\n" +
@@ -774,7 +774,7 @@ public class AutoValueParcelExtensionTest {
         "      dest.writeInt(1);\n" +
         "    } else {\n" +
         "      dest.writeInt(0);\n" +
-        "      ad().writeToParcel(dest, 0);\n" +
+        "      ad().writeToParcel(dest, flags);\n" +
         "    }\n" +
         "    dest.writeStrongBinder(ae());\n" +
         "    if (af() == null) {\n" +
@@ -787,7 +787,7 @@ public class AutoValueParcelExtensionTest {
         "    dest.writeInt(ah());\n" +
         "    dest.writeCharArray(ai());\n" +
         "    dest.writeString(aj().name());\n" +
-        "    ak().writeToParcel(dest, 0);\n" +
+        "    ak().writeToParcel(dest, flags);\n" +
         "  }\n" +
         "\n" +
         "  @Override\n" +
@@ -1245,7 +1245,7 @@ public class AutoValueParcelExtensionTest {
         + "\n"
         + "  @Override\n"
         + "  public void writeToParcel(Parcel dest, int flags) {\n"
-        + "    param().writeToParcel(dest, 0);\n"
+        + "    param().writeToParcel(dest, flags);\n"
         + "  }\n"
         + "\n"
         + "  @Override\n"
@@ -1474,7 +1474,7 @@ public class AutoValueParcelExtensionTest {
             "    dest.writeLong(d());\n" +
             "    dest.writeFloat(e());\n" +
             "    dest.writeDouble(f());\n" +
-            "    TextUtils.writeToParcel(g(), dest, 0);\n" +
+            "    TextUtils.writeToParcel(g(), dest, flags);\n" +
             "    dest.writeStrongBinder(i());\n" +
             "    dest.writeString(j());\n" +
             "    dest.writeInt(k() ? 1 : 0);\n" +
