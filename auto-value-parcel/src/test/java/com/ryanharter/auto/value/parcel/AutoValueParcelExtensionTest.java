@@ -317,14 +317,6 @@ public class AutoValueParcelExtensionTest {
         + "  }\n"
         + "  public void writeToParcel(Parcel in, int flags) {"
         + "  }\n"
-        + "  public static final Creator<Parcelable1> CREATOR = new Creator<Parcelable1>() {\n"
-        + "    public Parcelable1 createFromParcel(Parcel in) {\n"
-        + "      return new Parcelable1();\n"
-        + "    }\n"
-        + "    public Parcelable1[] newArray(int size) {\n"
-        + "      return new Parcelable1[size];\n"
-        + "    }\n"
-        + "  };"
         + "}");
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", ""
         + "package test;\n"
@@ -553,14 +545,6 @@ public class AutoValueParcelExtensionTest {
         + "  }\n"
         + "  public void writeToParcel(Parcel in, int flags) {"
         + "  }\n"
-        + "  public static final Creator<Parcelable1> CREATOR = new Creator<Parcelable1>() {\n"
-        + "    public Parcelable1 createFromParcel(Parcel in) {\n"
-        + "      return new Parcelable1();\n"
-        + "    }\n"
-        + "    public Parcelable1[] newArray(int size) {\n"
-        + "      return new Parcelable1[size];\n"
-        + "    }\n"
-        + "  };"
         + "}");
     JavaFileObject foobinder = JavaFileObjects.forSourceString("test.FooBinder", "" +
         "package test;\n" +
@@ -713,14 +697,14 @@ public class AutoValueParcelExtensionTest {
         "        in.readPersistableBundle(PersistableBundle.class.getClassLoader()),\n" +
         "        in.readSize(),\n" +
         "        in.readSizeF(),\n" +
-        "        in.readInt() == 0 ? Parcelable1.CREATOR.createFromParcel(in) : null,\n" +
+        "        in.readInt() == 0 ? (Parcelable1) in.readParcelable(Parcelable1.class.getClassLoader()) : null,\n" +
         "        (FooBinder) in.readStrongBinder(),\n" +
         "        in.readInt() == 0 ? in.readInt() == 1 : null,\n" +
         "        (char) in.readInt(),\n" +
         "        (char) in.readInt(),\n" +
         "        in.createCharArray(),\n" +
         "        Numbers.valueOf(in.readString()),\n" +
-        "        Numbers2.CREATOR.createFromParcel(in)\n" +
+        "        (Numbers2) in.readParcelable(Numbers2.class.getClassLoader())\n" +
         "      );\n" +
         "    }\n" +
         "    @Override\n" +
@@ -755,7 +739,7 @@ public class AutoValueParcelExtensionTest {
         "    dest.writeDouble(G());\n" +
         "    dest.writeInt(h() ? 1 : 0);\n" +
         "    dest.writeInt(H() ? 1 : 0);\n" +
-        "    i().writeToParcel(dest, flags);\n" +
+        "    dest.writeParcelable(i(), flags);\n" +
         "    TextUtils.writeToParcel(j(), dest, flags);\n" +
         "    dest.writeMap(k());\n" +
         "    dest.writeList(l());\n" +
@@ -774,7 +758,7 @@ public class AutoValueParcelExtensionTest {
         "      dest.writeInt(1);\n" +
         "    } else {\n" +
         "      dest.writeInt(0);\n" +
-        "      ad().writeToParcel(dest, flags);\n" +
+        "      dest.writeParcelable(ad(), flags);\n" +
         "    }\n" +
         "    dest.writeStrongBinder(ae());\n" +
         "    if (af() == null) {\n" +
@@ -787,7 +771,7 @@ public class AutoValueParcelExtensionTest {
         "    dest.writeInt(ah());\n" +
         "    dest.writeCharArray(ai());\n" +
         "    dest.writeString(aj().name());\n" +
-        "    ak().writeToParcel(dest, flags);\n" +
+        "    dest.writeParcelable(ak(), flags);\n" +
         "  }\n" +
         "\n" +
         "  @Override\n" +
@@ -1230,7 +1214,7 @@ public class AutoValueParcelExtensionTest {
         + "    @Override\n"
         + "    public AutoValue_Foo createFromParcel(Parcel in) {\n"
         + "      return new AutoValue_Foo(\n"
-        + "          Param.CREATOR.createFromParcel(in)\n"
+        + "          (Param) in.readParcelable(Param.class.getClassLoader())\n"
         + "      );\n"
         + "    }\n"
         + "    @Override\n"
@@ -1245,7 +1229,7 @@ public class AutoValueParcelExtensionTest {
         + "\n"
         + "  @Override\n"
         + "  public void writeToParcel(Parcel dest, int flags) {\n"
-        + "    param().writeToParcel(dest, flags);\n"
+        + "    dest.writeParcelable(param(), flags);\n"
         + "  }\n"
         + "\n"
         + "  @Override\n"
