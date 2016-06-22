@@ -755,7 +755,7 @@ public class AutoValueParcelExtensionTest {
         "    dest.writeDouble(G());\n" +
         "    dest.writeInt(h() ? 1 : 0);\n" +
         "    dest.writeInt(H() ? 1 : 0);\n" +
-        "    i().writeToParcel(dest, flags);\n" +
+        "    dest.writeParcelable(i(), flags);\n" +
         "    TextUtils.writeToParcel(j(), dest, flags);\n" +
         "    dest.writeMap(k());\n" +
         "    dest.writeList(l());\n" +

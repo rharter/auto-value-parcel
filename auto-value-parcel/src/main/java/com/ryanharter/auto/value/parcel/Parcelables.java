@@ -267,8 +267,13 @@ final class Parcelables {
       block.add("$N.writeDouble($N())", out, property.methodName);
     else if (type.equals(TypeName.BOOLEAN) || type.equals(TypeName.BOOLEAN.box()))
       block.add("$N.writeInt($N() ? 1 : 0)", out, property.methodName);
-    else if (type.equals(PARCELABLE))
-      block.add("$N().writeToParcel($N, $N)", property.methodName, out, flags);
+    else if (type.equals(PARCELABLE)) {
+      if (property.type.equals(PARCELABLE)) {
+        block.add("$N.writeParcelable($N(), $N)", out, property.methodName, flags);
+      } else {
+        block.add("$N().writeToParcel($N, $N)", property.methodName, out, flags);
+      }
+    }
     else if (type.equals(CHARSEQUENCE))
       block.add("$T.writeToParcel($N(), $N, $N)", TEXTUTILS, property.methodName, out, flags);
     else if (type.equals(MAP))
