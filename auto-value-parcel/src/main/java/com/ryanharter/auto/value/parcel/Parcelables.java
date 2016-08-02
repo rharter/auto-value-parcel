@@ -143,11 +143,7 @@ final class Parcelables {
         TypeName type = TypeName.get(t);
         while (type instanceof ParameterizedTypeName && !((ParameterizedTypeName) type).typeArguments.isEmpty()) {
           List<TypeName> args = ((ParameterizedTypeName) type).typeArguments;
-          if (args.size() >= 2) { // must be a map type
-            type = args.get(1);
-          } else if (args.size() == 1) {
-            type = args.get(0);
-          }
+          type = args.get(args.size() - 1);
         }
         return type;
       }
