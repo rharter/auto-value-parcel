@@ -140,22 +140,16 @@ final class Parcelables {
   private static TypeName getParcelableComponent(final Types types, final TypeMirror type) {
     return type.accept(new SimpleTypeVisitor7<TypeName, Void>() {
       @Override public TypeName visitDeclared(DeclaredType t, Void aVoid) {
-        List<? extends TypeMirror> params = t.getTypeArguments();
-        if (params.size() >= 2) { // must be a map type
-          TypeElement param = (TypeElement) types.asElement(params.get(1));
-          if (getParcelableType(types, param) != null) {
-            return TypeName.get(param.asType());
+        TypeName type = TypeName.get(t);
+        while (type instanceof ParameterizedTypeName && !((ParameterizedTypeName) type).typeArguments.isEmpty()) {
+          List<TypeName> args = ((ParameterizedTypeName) type).typeArguments;
+          if (args.size() >= 2) { // must be a map type
+            type = args.get(1);
+          } else if (args.size() == 1) {
+            type = args.get(0);
           }
         }
-
-        if (params.size() >= 1) {
-          TypeElement param = (TypeElement) types.asElement(params.get(0));
-          if (getParcelableType(types, param) != null) {
-            return TypeName.get(param.asType());
-          }
-        }
-
-        return TypeName.get(t);
+        return type;
       }
 
       @Override public TypeName visitArray(ArrayType t, Void aVoid) {
