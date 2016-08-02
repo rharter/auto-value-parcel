@@ -246,10 +246,15 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
         type = aType.getComponentType();
       }
       TypeElement element = (TypeElement) typeUtils.asElement(type);
-      if ((element == null || !Parcelables.isValidType(typeUtils, element)) &&
-          !Parcelables.isValidType(TypeName.get(type))){
-        env.getMessager().printMessage(Diagnostic.Kind.ERROR, "AutoValue property " +
-            property.methodName + " is not a supported Parcelable type.", property.element);
+      if ((element == null || !Parcelables.isValidType(typeUtils, type))
+          && !Parcelables.isValidType(TypeName.get(type))) {
+        if (element != null && Parcelables.MAP.equals(Parcelables.getParcelableType(typeUtils, element))) {
+          env.getMessager().printMessage(Diagnostic.Kind.ERROR, "Maps can only have String objects "
+              + "for keys and valid Parcelable types for values.", property.element);
+        } else {
+          env.getMessager().printMessage(Diagnostic.Kind.ERROR, "AutoValue property " +
+              property.methodName + " is not a supported Parcelable type.", property.element);
+        }
         throw new AutoValueParcelException();
       }
     }
