@@ -1,26 +1,16 @@
 package com.ryanharter.auto.value.parcel;
 
-import static com.google.common.truth.Truth.assertAbout;
-import static com.google.common.truth.Truth.assertThat;
-import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
-import static org.junit.Assert.fail;
-
+import android.os.Parcelable;
 import com.google.auto.common.MoreElements;
 import com.google.auto.value.extension.AutoValueExtension;
 import com.google.auto.value.processor.AutoValueProcessor;
 import com.google.common.collect.ImmutableSet;
 import com.google.testing.compile.CompilationRule;
 import com.google.testing.compile.JavaFileObjects;
-import android.os.Parcelable;
-
 import com.ryanharter.auto.value.parcel.util.TestMessager;
 import com.ryanharter.auto.value.parcel.util.TestProcessingEnvironment;
-import java.util.Collections;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -32,6 +22,14 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.Elements;
 import javax.tools.JavaFileObject;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
+import static com.google.common.truth.Truth.assertAbout;
+import static com.google.common.truth.Truth.assertThat;
+import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
+import static org.junit.Assert.fail;
 
 public class AutoValueParcelExtensionTest {
 
@@ -799,9 +797,8 @@ public class AutoValueParcelExtensionTest {
         + "@AutoValue public abstract class Test implements Parcelable {\n"
         + "public abstract Map a();\n"
         + "public abstract Map<String, CharSequence> b();\n"
-        + "public abstract Map<CharSequence, String> c();\n"
-        + "public abstract List d();\n"
-        + "public abstract List<String> e();\n"
+        + "public abstract List c();\n"
+        + "public abstract List<String> d();\n"
         + "}"
     );
 
@@ -826,7 +823,6 @@ public class AutoValueParcelExtensionTest {
         "      return new AutoValue_Test(\n" +
         "          (Map) in.readHashMap(Map.class.getClassLoader()),\n" +
         "          (Map<String, CharSequence>) in.readHashMap(CharSequence.class.getClassLoader()),\n" +
-        "          (Map<CharSequence, String>) in.readHashMap(String.class.getClassLoader()),\n" +
         "          (List) in.readArrayList(List.class.getClassLoader()),\n" +
         "          (List<String>) in.readArrayList(String.class.getClassLoader())" +
         "      );\n" +
@@ -837,17 +833,16 @@ public class AutoValueParcelExtensionTest {
         "    }\n" +
         "  };\n" +
         "\n" +
-        "  AutoValue_Test(Map a, Map<String, CharSequence> b, Map<CharSequence, String> c, List d, List<String> e) {\n" +
-        "    super(a, b, c, d, e);\n" +
+        "  AutoValue_Test(Map a, Map<String, CharSequence> b, List c, List<String> d) {\n" +
+        "    super(a, b, c, d);\n" +
         "  }\n" +
         "\n" +
         "  @Override\n" +
         "  public void writeToParcel(Parcel dest, int flags) {\n" +
         "    dest.writeMap(a());\n" +
         "    dest.writeMap(b());\n" +
-        "    dest.writeMap(c());\n" +
+        "    dest.writeList(c());\n" +
         "    dest.writeList(d());\n" +
-        "    dest.writeList(e());\n" +
         "  }\n" +
         "\n" +
         "  @Override\n" +
@@ -880,6 +875,25 @@ public class AutoValueParcelExtensionTest {
 
     String generated = extension.generateClass(context, "Test_TypeWithParcelable", "SampleTypeWithParcelable", true);
     assertThat(generated).isNotNull();
+  }
+
+  @Test public void throwsForInvalidMapType() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.InvalidMap", ""
+        + "package test;\n"
+        + "import com.google.auto.value.AutoValue;\n"
+        + "import android.os.Parcelable;\n"
+        + "import java.util.Map;\n"
+        + "@AutoValue public abstract class InvalidMap implements Parcelable {\n"
+        + "  public abstract Map<String, Parcelable> valid();\n"
+        + "  public abstract Map<Parcelable, String> invalid();\n"
+        + "}");
+
+    assertAbout(javaSources())
+        .that(Arrays.asList(parcelable, parcel, source))
+        .processedWith(new AutoValueProcessor())
+        .failsToCompile()
+        .withErrorContaining("Maps can only have String objects for keys and valid Parcelable"
+            + " types for values.");
   }
 
   @Test public void usesCustomParcelTypeAdapter() throws Exception {
@@ -1545,6 +1559,11 @@ public class AutoValueParcelExtensionTest {
     abstract int primitive();
     abstract String serializable();
     abstract ParcelableProperty parcelable();
+  }
+
+  abstract class SampleTypeWithInvalidMap implements Parcelable {
+    abstract Map<String, Parcelable> valid();
+    abstract Map<Parcelable, String> invalid();
   }
 
   abstract class ParcelableProperty implements Parcelable {}

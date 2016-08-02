@@ -16,34 +16,35 @@ import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.SimpleTypeVisitor7;
 import javax.lang.model.util.Types;
 
 final class Parcelables {
 
-  private static final TypeName STRING = ClassName.get("java.lang", "String");
-  private static final TypeName MAP = ClassName.get("java.util", "Map");
-  private static final TypeName LIST = ClassName.get("java.util", "List");
-  private static final TypeName BOOLEANARRAY = ArrayTypeName.of(boolean.class);
-  private static final TypeName BYTEARRAY = ArrayTypeName.of(byte.class);
-  private static final TypeName CHARARRAY = ArrayTypeName.of(char.class);
-  private static final TypeName INTARRAY = ArrayTypeName.of(int.class);
-  private static final TypeName LONGARRAY = ArrayTypeName.of(long.class);
-  private static final TypeName STRINGARRAY = ArrayTypeName.of(String.class);
-  private static final TypeName SPARSEARRAY = ClassName.get("android.util", "SparseArray");
-  private static final TypeName SPARSEBOOLEANARRAY = ClassName.get("android.util", "SparseBooleanArray");
-  private static final TypeName BUNDLE = ClassName.get("android.os", "Bundle");
-  private static final TypeName PARCELABLE = ClassName.get("android.os", "Parcelable");
-  private static final TypeName PARCELABLEARRAY = ArrayTypeName.of(PARCELABLE);
-  private static final TypeName CHARSEQUENCE = ClassName.get("java.lang", "CharSequence");
-  private static final TypeName IBINDER = ClassName.get("android.os", "IBinder");
-  private static final TypeName OBJECTARRAY = ArrayTypeName.of(TypeName.OBJECT);
-  private static final TypeName SERIALIZABLE = ClassName.get("java.io", "Serializable");
-  private static final TypeName PERSISTABLEBUNDLE = ClassName.get("android.os", "PersistableBundle");
-  private static final TypeName SIZE = ClassName.get("android.util", "Size");
-  private static final TypeName SIZEF = ClassName.get("android.util", "SizeF");
-  private static final TypeName TEXTUTILS = ClassName.get("android.text", "TextUtils");
-  private static final TypeName ENUM = ClassName.get(Enum.class);
+  static final TypeName STRING = ClassName.get("java.lang", "String");
+  static final TypeName MAP = ClassName.get("java.util", "Map");
+  static final TypeName LIST = ClassName.get("java.util", "List");
+  static final TypeName BOOLEANARRAY = ArrayTypeName.of(boolean.class);
+  static final TypeName BYTEARRAY = ArrayTypeName.of(byte.class);
+  static final TypeName CHARARRAY = ArrayTypeName.of(char.class);
+  static final TypeName INTARRAY = ArrayTypeName.of(int.class);
+  static final TypeName LONGARRAY = ArrayTypeName.of(long.class);
+  static final TypeName STRINGARRAY = ArrayTypeName.of(String.class);
+  static final TypeName SPARSEARRAY = ClassName.get("android.util", "SparseArray");
+  static final TypeName SPARSEBOOLEANARRAY = ClassName.get("android.util", "SparseBooleanArray");
+  static final TypeName BUNDLE = ClassName.get("android.os", "Bundle");
+  static final TypeName PARCELABLE = ClassName.get("android.os", "Parcelable");
+  static final TypeName PARCELABLEARRAY = ArrayTypeName.of(PARCELABLE);
+  static final TypeName CHARSEQUENCE = ClassName.get("java.lang", "CharSequence");
+  static final TypeName IBINDER = ClassName.get("android.os", "IBinder");
+  static final TypeName OBJECTARRAY = ArrayTypeName.of(TypeName.OBJECT);
+  static final TypeName SERIALIZABLE = ClassName.get("java.io", "Serializable");
+  static final TypeName PERSISTABLEBUNDLE = ClassName.get("android.os", "PersistableBundle");
+  static final TypeName SIZE = ClassName.get("android.util", "Size");
+  static final TypeName SIZEF = ClassName.get("android.util", "SizeF");
+  static final TypeName TEXTUTILS = ClassName.get("android.text", "TextUtils");
+  static final TypeName ENUM = ClassName.get(Enum.class);
 
   private static final Set<TypeName> VALID_TYPES = ImmutableSet.of(STRING, MAP, LIST, BOOLEANARRAY,
       BYTEARRAY, CHARARRAY, INTARRAY, LONGARRAY, STRINGARRAY, SPARSEARRAY, SPARSEBOOLEANARRAY,
@@ -54,16 +55,21 @@ final class Parcelables {
     return typeName.isPrimitive() || typeName.isBoxedPrimitive() || VALID_TYPES.contains(typeName);
   }
 
-  public static boolean isValidType(Types types, TypeElement type) {
-    return getParcelableType(types, type) != null;
+  public static boolean isValidType(Types types, TypeMirror type) {
+    // Special case for MAP, since it can only have String keys and Parcelable values
+    if (isOfType(types, type, MAP)) {
+      return isValidMap(types, type);
+    }
+
+    return getParcelableType(types, (TypeElement) types.asElement(type)) != null;
   }
 
   public static TypeName getParcelableType(Types types, TypeElement type) {
     TypeMirror typeMirror = type.asType();
     while (typeMirror.getKind() != TypeKind.NONE) {
+      TypeName typeName = TypeName.get(typeMirror);
 
       // first, check if the class is valid.
-      TypeName typeName = TypeName.get(typeMirror);
       if (typeName instanceof ParameterizedTypeName) {
         typeName = ((ParameterizedTypeName) typeName).rawType;
       }
@@ -84,6 +90,48 @@ final class Parcelables {
       typeMirror = type.getSuperclass();
     }
     return null;
+  }
+
+  /**
+   * Maps can only have String keys and Parcelable values.
+   */
+  private static boolean isValidMap(Types types, TypeMirror type) {
+    return type.accept(new SimpleTypeVisitor6<Boolean, Types>() {
+      @Override public Boolean visitDeclared(DeclaredType t, Types o) {
+        List<? extends TypeMirror> args = t.getTypeArguments();
+        if (args.size() == 2) {
+          TypeMirror key = args.get(0);
+          TypeMirror value = args.get(1);
+          if (STRING.equals(TypeName.get(key)) && isValidType(o, value)) {
+            return true;
+          }
+        }
+        return false;
+      }
+    }, types);
+  }
+
+  private static boolean isOfType(Types types, TypeMirror typeMirror, TypeName target) {
+    TypeElement element = (TypeElement) types.asElement(typeMirror);
+    while (typeMirror.getKind() != TypeKind.NONE) {
+      TypeName typeName = TypeName.get(typeMirror);
+      if (typeName instanceof ParameterizedTypeName) {
+        typeName = ((ParameterizedTypeName) typeName).rawType;
+      }
+      if (typeName.equals(target)) {
+        return true;
+      }
+
+      for (TypeMirror iface : element.getInterfaces()) {
+        if (isOfType(types, iface, target)) {
+          return true;
+        }
+      }
+
+      element = (TypeElement) types.asElement(typeMirror);
+      typeMirror = element.getSuperclass();
+    }
+    return false;
   }
 
   /**
