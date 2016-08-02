@@ -1561,11 +1561,6 @@ public class AutoValueParcelExtensionTest {
     abstract ParcelableProperty parcelable();
   }
 
-  abstract class SampleTypeWithInvalidMap implements Parcelable {
-    abstract Map<String, Parcelable> valid();
-    abstract Map<Parcelable, String> invalid();
-  }
-
   abstract class ParcelableProperty implements Parcelable {}
 
   class NonSerializable {}
