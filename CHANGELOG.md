@@ -1,5 +1,11 @@
 # Change Log
 
+## Version 0.2.4-rc2 (2016-18-23)
+
+Supports: autoValue 1.3-rc2
+
+* Fixes issue causing multiple levels of nested generics to generate broken code.
+
 ## Version 0.2.3-rc2 (2016-06-15)
 
 Supports: AutoValue 1.3-rc2
