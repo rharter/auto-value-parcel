@@ -72,8 +72,8 @@ public class AutoValueParcelExtensionTest {
         "import android.util.Size;\n" +
         "import android.util.SizeF;\n" +
         "public interface Parcel {\n" +
-        "Object readValue(ClassLoader cl);\n" +
-        "void writeValue(Object o);\n" +
+        "  Object readValue(ClassLoader cl);\n" +
+        "  void writeValue(Object o);\n" +
         "  byte readByte();\n" +
         "  int readInt();\n" +
         "  long readLong();\n" +
@@ -979,6 +979,68 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
         .that(Arrays.asList(parcel, parcelable, bar, barAdapter, foo))
+        .processedWith(new AutoValueProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
+  @Test public void handlesNestedParameterizedTypes() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Foo", ""
+        + "package test;\n"
+        + "import android.os.Parcelable;\n"
+        + "import java.util.List;\n"
+        + "import com.google.auto.value.AutoValue;\n"
+        + "@AutoValue public abstract class Foo implements Parcelable {\n"
+        + "  public abstract List<String> flat();\n"
+        + "  public abstract List<List<String>> nested();\n"
+        + "  public abstract List<List<List<String>>> doubleNested();\n"
+        + "}");
+    JavaFileObject expected = JavaFileObjects.forSourceString("test.AutoValue_Foo", ""
+        + "package test;\n"
+        + "\n"
+        + "import android.os.Parcel;\n"
+        + "import android.os.Parcelable;\n"
+        + "import java.lang.Override;\n"
+        + "import java.lang.String;\n"
+        + "import java.lang.SuppressWarnings;\n"
+        + "import java.util.List;\n"
+        + "\n"
+        + "final class AutoValue_Foo extends $AutoValue_Foo {\n"
+        + "  public static final Parcelable.Creator<AutoValue_Foo> CREATOR = new Parcelable.Creator<AutoValue_Foo>() {\n"
+        + "    @Override\n"
+        + "    @SuppressWarnings(\"unchecked\")\n"
+        + "    public AutoValue_Foo createFromParcel(Parcel in) {\n"
+        + "      return new AutoValue_Foo(\n"
+        + "          (List<String>) in.readArrayList(String.class.getClassLoader()),\n"
+        + "          (List<List<String>>) in.readArrayList(String.class.getClassLoader()),\n"
+        + "          (List<List<List<String>>>) in.readArrayList(String.class.getClassLoader())\n"
+        + "      );\n"
+        + "    }\n"
+        + "    @Override\n"
+        + "    public AutoValue_Foo[] newArray(int size) {\n"
+        + "      return new AutoValue_Foo[size];\n"
+        + "    }\n"
+        + "  };\n"
+        + "\n"
+        + "  AutoValue_Foo(List<String> flat, List<List<String>> nested, List<List<List<String>>> doubleNested) {\n"
+        + "    super(flat, nested, doubleNested);\n"
+        + "  }\n"
+        + "\n"
+        + "  @Override\n"
+        + "  public void writeToParcel(Parcel dest, int flags) {\n"
+        + "    dest.writeList(flat());\n"
+        + "    dest.writeList(nested());\n"
+        + "    dest.writeList(doubleNested());\n"
+        + "  }\n"
+        + "\n"
+        + "  @Override\n"
+        + "  public int describeContents() {\n"
+        + "    return 0;\n"
+        + "  }\n"
+        + "}");
+    assertAbout(javaSources())
+        .that(Arrays.asList(parcelable, parcel, source))
         .processedWith(new AutoValueProcessor())
         .compilesWithoutError()
         .and()
