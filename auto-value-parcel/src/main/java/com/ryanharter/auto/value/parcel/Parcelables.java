@@ -161,7 +161,8 @@ final class Parcelables {
 
   static void readValue(CodeBlock.Builder block, AutoValueParcelExtension.Property property,
       final TypeName parcelableType, Types types) {
-    if (property.nullable()){
+    boolean needsNullCheck = needsNullCheck(property, parcelableType);
+    if (needsNullCheck){
       block.add("in.readInt() == 0 ? ");
     }
 
@@ -255,7 +256,7 @@ final class Parcelables {
           getParcelableComponent(types, property.element.getReturnType()));
     }
 
-    if (property.nullable()){
+    if (needsNullCheck){
       block.add(" : null");
     }
   }
@@ -276,14 +277,15 @@ final class Parcelables {
       ParameterSpec out, ParameterSpec flags) {
     CodeBlock.Builder block = CodeBlock.builder();
 
-    if (property.nullable()) {
+    TypeName type = getTypeNameFromProperty(property, types);
+
+    boolean needsNullCheck = needsNullCheck(property, type);
+    if (needsNullCheck) {
       block.beginControlFlow("if ($N() == null)", property.methodName);
       block.addStatement("$N.writeInt(1)", out);
       block.nextControlFlow("else");
       block.addStatement("$N.writeInt(0)", out);
     }
-
-    final TypeName type = getTypeNameFromProperty(property, types);
 
     if (type.equals(STRING))
       block.add("$N.writeString($N())", out, property.methodName);
@@ -352,11 +354,22 @@ final class Parcelables {
 
     block.add(";\n");
 
-    if (property.nullable()) {
+    if (needsNullCheck) {
       block.endControlFlow();
     }
 
     return block.build();
+  }
+
+  private static boolean needsNullCheck(AutoValueParcelExtension.Property property, TypeName type) {
+    return property.nullable()
+        && !type.equals(BUNDLE)
+        && !type.equals(LIST)
+        && !type.equals(MAP)
+        && !type.equals(PARCELABLE)
+        && !type.equals(PERSISTABLEBUNDLE)
+        && !type.equals(SPARSEARRAY)
+        && !type.equals(SPARSEBOOLEANARRAY);
   }
 
   public static CodeBlock writeValueWithTypeAdapter(FieldSpec adapter, AutoValueParcelExtension.Property property, ParameterSpec out) {

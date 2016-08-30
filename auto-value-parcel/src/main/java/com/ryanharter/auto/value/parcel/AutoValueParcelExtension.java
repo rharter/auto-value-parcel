@@ -76,7 +76,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
       }
     }
 
-    public Boolean nullable() {
+    public boolean nullable() {
       return annotations.contains("Nullable");
     }
 
