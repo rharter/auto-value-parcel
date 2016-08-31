@@ -289,16 +289,13 @@ final class Parcelables {
 
     if (type.equals(STRING))
       block.add("$N.writeString($N())", out, property.methodName);
-    else if (type.equals(TypeName.BYTE) || type.equals(TypeName.BYTE.box()))
+    else if (type.equals(TypeName.BYTE) || type.equals(TypeName.BYTE.box())
+        || type.equals(TypeName.INT) || type.equals(TypeName.INT.box())
+        || type.equals(TypeName.CHAR) || type.equals(TypeName.CHAR.box())
+        || type.equals(TypeName.SHORT))
       block.add("$N.writeInt($N())", out, property.methodName);
-    else if (type.equals(TypeName.INT) || type.equals(TypeName.INT.box()))
-      block.add("$N.writeInt($N())", out, property.methodName);
-    else if (type.equals(TypeName.SHORT))
-      block.add("$N.writeInt(((Short) $N()).intValue())", out, property.methodName);
     else if (type.equals(TypeName.SHORT.box()))
       block.add("$N.writeInt($N().intValue())", out, property.methodName);
-    else if (type.equals(TypeName.CHAR) || type.equals(TypeName.CHAR.box()))
-      block.add("$N.writeInt($N())", out, property.methodName);
     else if (type.equals(TypeName.LONG) || type.equals(TypeName.LONG.box()))
       block.add("$N.writeLong($N())", out, property.methodName);
     else if (type.equals(TypeName.FLOAT) || type.equals(TypeName.FLOAT.box()))

@@ -724,7 +724,7 @@ public class AutoValueParcelExtensionTest {
         "      dest.writeInt(0);\n" +
         "      dest.writeInt(CN());\n" +
         "    }\n" +
-        "    dest.writeInt(((Short) d()).intValue());\n" +
+        "    dest.writeInt(d());\n" +
         "    dest.writeInt(D().intValue());\n" +
         "    if (DN() == null) {\n" +
         "      dest.writeInt(1);\n" +
@@ -1627,7 +1627,7 @@ public class AutoValueParcelExtensionTest {
             "  public void writeToParcel(Parcel dest, int flags) {\n" +
             "    dest.writeInt(a());\n" +
             "    dest.writeInt(b());\n" +
-            "    dest.writeInt(((Short) c()).intValue());\n" +
+            "    dest.writeInt(c());\n" +
             "    dest.writeLong(d());\n" +
             "    dest.writeFloat(e());\n" +
             "    dest.writeDouble(f());\n" +
