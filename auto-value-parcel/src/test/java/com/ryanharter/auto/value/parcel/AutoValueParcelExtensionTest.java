@@ -1660,6 +1660,143 @@ public class AutoValueParcelExtensionTest {
 
   }
 
+  @Test
+  public void parameterizedType() {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Test", ""
+            + "package test;\n"
+            + "import android.os.Parcelable;\n"
+            + "import com.google.auto.value.AutoValue;\n"
+            + "@AutoValue public abstract class Test<T extends Parcelable> implements Parcelable {\n"
+            + "public abstract T tea();\n"
+            + "}"
+    );
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test/AutoValue_Test", ""
+            + "package test;\n" +
+            "\n" +
+            "import android.os.Parcel;\n" +
+            "import android.os.Parcelable;\n" +
+            "import java.lang.Override;\n" +
+            "\n" +
+            "final class AutoValue_Test<T extends Parcelable> extends $AutoValue_Test<T> {\n" +
+            "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = new Parcelable.Creator<AutoValue_Test>() {\n" +
+            "    @Override\n" +
+            "    public AutoValue_Test createFromParcel(Parcel in) {\n" +
+            "      return new AutoValue_Test(\n" +
+            "          in.readParcelable(Parcelable.class.getClassLoader())\n" +
+            "      );\n" +
+            "    }\n" +
+            "    @Override\n" +
+            "    public AutoValue_Test[] newArray(int size) {\n" +
+            "      return new AutoValue_Test[size];\n" +
+            "    }\n" +
+            "  };\n" +
+            "\n" +
+            "  AutoValue_Test(T tea) {\n" +
+            "    super(tea);\n" +
+            "  }\n" +
+            "\n" +
+            "  @Override\n" +
+            "  public void writeToParcel(Parcel dest, int flags) {\n" +
+            "    dest.writeParcelable(tea(), flags);\n" +
+            "  }\n" +
+            "\n" +
+            "  @Override\n" +
+            "  public int describeContents() {\n" +
+            "    return 0;\n" +
+            "  }\n" +
+            "}");
+
+    assertAbout(javaSources())
+            .that(Arrays.asList(parcel, parcelable, source))
+            .processedWith(new AutoValueProcessor())
+            .compilesWithoutError()
+            .and()
+            .generatesSources(expected);
+  }
+
+  @Test
+  public void parameterizedTyp_withOtherFields() {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Test", ""
+            + "package test;\n"
+            + "import android.os.Parcelable;\n"
+            + "import com.google.auto.value.AutoValue;\n"
+            + "@AutoValue public abstract class Test<T extends Parcelable> implements Parcelable {\n"
+            + "public abstract T tea();\n"
+            + "public abstract String foo();\n"
+            + "public abstract Integer id();\n"
+            + "}"
+    );
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test/AutoValue_Test", ""
+            + "package test;\n" +
+            "\n" +
+            "import android.os.Parcel;\n" +
+            "import android.os.Parcelable;\n" +
+            "import java.lang.Integer;\n" +
+            "import java.lang.Override;\n" +
+            "import java.lang.String;\n" +
+            "\n" +
+            "final class AutoValue_Test<T extends Parcelable> extends $AutoValue_Test<T> {\n" +
+            "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = new Parcelable.Creator<AutoValue_Test>() {\n" +
+            "    @Override\n" +
+            "    public AutoValue_Test createFromParcel(Parcel in) {\n" +
+            "      return new AutoValue_Test(\n" +
+            "          in.readParcelable(Parcelable.class.getClassLoader()),\n" +
+            "          in.readString(),\n" +
+            "          in.readInt()\n" +
+            "      );\n" +
+            "    }\n" +
+            "    @Override\n" +
+            "    public AutoValue_Test[] newArray(int size) {\n" +
+            "      return new AutoValue_Test[size];\n" +
+            "    }\n" +
+            "  };\n" +
+            "\n" +
+            "  AutoValue_Test(T tea, String foo, Integer id) {\n" +
+            "    super(tea, foo, id);\n" +
+            "  }\n" +
+            "\n" +
+            "  @Override\n" +
+            "  public void writeToParcel(Parcel dest, int flags) {\n" +
+            "    dest.writeParcelable(tea(), flags);\n" +
+            "    dest.writeString(foo());\n" +
+            "    dest.writeInt(id());\n" +
+            "  }\n" +
+            "\n" +
+            "  @Override\n" +
+            "  public int describeContents() {\n" +
+            "    return 0;\n" +
+            "  }\n" +
+            "}");
+
+    assertAbout(javaSources())
+            .that(Arrays.asList(parcel, parcelable, source))
+            .processedWith(new AutoValueProcessor())
+            .compilesWithoutError()
+            .and()
+            .generatesSources(expected);
+  }
+
+  @Test
+  public void parameterizedTypeOfNonParcelableTypeFails() {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Test", ""
+            + "package test;\n"
+            + "import android.os.Parcelable;\n"
+            + "import com.google.auto.value.AutoValue;\n"
+            + "@AutoValue public abstract class Test<T extends Runnable> implements Parcelable {\n"
+            + "public abstract T tea();\n"
+            + "}"
+    );
+
+    assertAbout(javaSources())
+            .that(Arrays.asList(parcel, parcelable, source))
+            .processedWith(new AutoValueProcessor())
+            .failsToCompile()
+            .withErrorContaining("AutoValue property tea is not a supported Parcelable type.")
+            .in(source).onLine(5);
+  }
+
   private AutoValueExtension.Context createContext(TypeElement type) {
     String packageName = MoreElements.getPackage(type).getQualifiedName().toString();
     Set<ExecutableElement> allMethods = MoreElements.getLocalAndInheritedMethods(type, elements);
