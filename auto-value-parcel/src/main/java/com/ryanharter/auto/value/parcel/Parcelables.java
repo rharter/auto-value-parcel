@@ -8,14 +8,18 @@ import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.TypeVariableName;
+
 import java.util.List;
 import java.util.Set;
+
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.SimpleTypeVisitor7;
 import javax.lang.model.util.Types;
@@ -137,15 +141,23 @@ final class Parcelables {
   /**
    * Returns the component of the type that is Parcelable, or descends from a Parcelable type.
    */
-  private static TypeName getParcelableComponent(final Types types, final TypeMirror type) {
-    return type.accept(new SimpleTypeVisitor7<TypeName, Void>() {
-      @Override public TypeName visitDeclared(DeclaredType t, Void aVoid) {
-        TypeName type = TypeName.get(t);
-        while (type instanceof ParameterizedTypeName && !((ParameterizedTypeName) type).typeArguments.isEmpty()) {
-          List<TypeName> args = ((ParameterizedTypeName) type).typeArguments;
-          type = args.get(args.size() - 1);
+  private static TypeName getParcelableComponent(final Types types, TypeMirror type) {
+    final TypeMirror typeFinal;
+    if (type.getKind() == TypeKind.TYPEVAR) {
+      TypeVariable vType = (TypeVariable) type;
+      typeFinal = vType.getUpperBound();
+    } else {
+      typeFinal = type;
+    }
+    return typeFinal.accept(new SimpleTypeVisitor7<TypeName, Void>() {
+      @Override
+      public TypeName visitDeclared(DeclaredType t, Void aVoid) {
+        TypeName typeFinal = TypeName.get(t);
+        while (typeFinal instanceof ParameterizedTypeName && !((ParameterizedTypeName) typeFinal).typeArguments.isEmpty()) {
+          List<TypeName> args = ((ParameterizedTypeName) typeFinal).typeArguments;
+          typeFinal = args.get(args.size() - 1);
         }
-        return type;
+        return typeFinal;
       }
 
       @Override public TypeName visitArray(ArrayType t, Void aVoid) {
@@ -185,7 +197,10 @@ final class Parcelables {
     } else if (parcelableType.equals(TypeName.BOOLEAN) || parcelableType.equals(TypeName.BOOLEAN.box())) {
       block.add("in.readInt() == 1");
     } else if (parcelableType.equals(PARCELABLE)) {
-      if (property.type.equals(PARCELABLE)) {
+      TypeName check = property.type instanceof TypeVariableName
+              ? ((TypeVariableName) property.type).bounds.get(0)
+              : property.type;
+      if (check.equals(PARCELABLE)) {
         block.add("in.readParcelable($T.class.getClassLoader())",
             getParcelableComponent(types, property.element.getReturnType()));
       } else {
@@ -390,6 +405,10 @@ final class Parcelables {
 
   static TypeName getTypeNameFromProperty(AutoValueParcelExtension.Property property, Types types) {
     TypeMirror returnType = property.element.getReturnType();
+    if (returnType.getKind() == TypeKind.TYPEVAR) {
+      TypeVariable vType = (TypeVariable) returnType;
+      returnType = vType.getUpperBound();
+    }
     TypeElement element = (TypeElement) types.asElement(returnType);
     if (element != null) {
       TypeName parcelableType = getParcelableType(types, element);

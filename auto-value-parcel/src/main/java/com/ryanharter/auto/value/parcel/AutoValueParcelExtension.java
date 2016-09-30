@@ -21,22 +21,27 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
+import com.squareup.javapoet.TypeVariableName;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -157,7 +162,6 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     TypeName type = ClassName.get(context.packageName(), className);
     TypeSpec.Builder subclass = TypeSpec.classBuilder(className)
         .addModifiers(FINAL)
-        .superclass(ClassName.get(context.packageName(), classToExtend))
         .addMethod(generateConstructor(properties))
         .addMethod(generateWriteToParcel(env, properties, typeAdapters));
 
@@ -169,6 +173,19 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
 
     subclass.addField(generateCreator(env, properties, type, typeAdapters));
 
+    ClassName superClass = ClassName.get(context.packageName(), classToExtend);
+    List<? extends TypeParameterElement> tpes = context.autoValueClass().getTypeParameters();
+    if (tpes.isEmpty()) {
+      subclass.superclass(superClass);
+    } else {
+      TypeName[] superTypeVariables = new TypeName[tpes.size()];
+      for (int i = 0, tpesSize = tpes.size(); i < tpesSize; i++) {
+        TypeParameterElement tpe = tpes.get(i);
+        subclass.addTypeVariable(TypeVariableName.get(tpe));
+        superTypeVariables[i] = TypeVariableName.get(tpe.getSimpleName().toString());
+      }
+      subclass.superclass(ParameterizedTypeName.get(superClass, superTypeVariables));
+    }
     if (needsContentDescriptor(context)) {
       subclass.addMethod(generateDescribeContents());
     }
@@ -244,6 +261,10 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
       if (type.getKind() == TypeKind.ARRAY) {
         ArrayType aType = (ArrayType) type;
         type = aType.getComponentType();
+      }
+      if (type.getKind() == TypeKind.TYPEVAR) {
+        TypeVariable vType = (TypeVariable) type;
+        type = vType.getUpperBound();
       }
       TypeElement element = (TypeElement) typeUtils.asElement(type);
       if ((element == null || !Parcelables.isValidType(typeUtils, type))
