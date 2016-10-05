@@ -95,7 +95,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     // Disallow manual implementation of the CREATOR instance
     VariableElement creator = findCreator(context);
     if (creator != null) {
-      context.processingEnvironment().getMessager().printMessage(Diagnostic.Kind.ERROR,
+      context.processingEnvironment().getMessager().printMessage(Diagnostic.Kind.WARNING,
           "Manual implementation of a static Parcelable.Creator<T> CREATOR field found when processing "
               + autoValueClass.toString() + ". Remove this so auto-value-parcel can automatically generate the "
               + "implementation for you.", creator);
@@ -291,7 +291,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     CodeBlock.Builder ctorCall = CodeBlock.builder();
     ctorCall.add("return new $T(\n", type);
     ctorCall.indent().indent();
-    boolean requiresSuppressWarnings = false;
+    boolean requiresSuppressWarnings = false; // TODO maybe true?
     for (int i = 0, n = properties.size(); i < n; i++) {
       Property property = properties.get(i);
       if (property.typeAdapter != null && typeAdapters.containsKey(property.typeAdapter)) {
