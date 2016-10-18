@@ -1,8 +1,17 @@
 # Change Log
 
-## Version 0.2.4-rc2 (2016-18-23)
+## Version 0.2.5 (2016-10-18)
 
-Supports: autoValue 1.3-rc2
+Supports AutoValue 1.3
+
+* Updates extension to support AutoValue 1.3
+* Adds support for null checks for Parcel methods documented to handle null (fixes #85)
+* Write unboxed short directly with writeInt. (fixes #87)
+* Adds support for generics with upper bound of any Parcelable type. (fixes #31)
+
+## Version 0.2.4-rc2 (2016-08-23)
+
+Supports: AutoValue 1.3-rc2
 
 * Fixes issue causing multiple levels of nested generics to generate broken code.
 
