@@ -265,7 +265,7 @@ final class Parcelables {
     } else if (parcelableType.equals(SIZEF)) {
       block.add("in.readSizeF()");
     } else if (parcelableType.equals(ENUM)) {
-      block.add("$T.valueOf(in.readString())", property.type);
+      block.add("$T.valueOf($T.class, in.readString())", Enum.class, property.type);
     } else {
       block.add("($T) in.readValue($T.class.getClassLoader())", property.type,
           getParcelableComponent(types, property.element.getReturnType()));
