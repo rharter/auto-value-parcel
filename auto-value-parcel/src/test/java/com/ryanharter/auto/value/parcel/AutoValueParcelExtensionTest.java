@@ -605,6 +605,7 @@ public class AutoValueParcelExtensionTest {
         "import java.lang.CharSequence;\n" +
         "import java.lang.Character;\n" +
         "import java.lang.Double;\n" +
+        "import java.lang.Enum;\n" +
         "import java.lang.Float;\n" +
         "import java.lang.Integer;\n" +
         "import java.lang.Long;\n" +
@@ -683,8 +684,8 @@ public class AutoValueParcelExtensionTest {
         "        in.readInt() == 0 ? (char) in.readInt() : null,\n" +
         "        in.createCharArray(),\n" +
         "        in.readInt() == 0 ? in.createCharArray() : null,\n" +
-        "        Numbers.valueOf(in.readString()),\n" +
-        "        in.readInt() == 0 ? Numbers.valueOf(in.readString()) : null,\n" +
+        "        Enum.valueOf(Numbers.class, in.readString()),\n" +
+        "        in.readInt() == 0 ? Enum.valueOf(Numbers.class, in.readString()) : null,\n" +
         "        (Numbers2) in.readParcelable(Numbers2.class.getClassLoader()),\n" +
         "        (Numbers2) in.readParcelable(Numbers2.class.getClassLoader())\n" +
         "      );\n" +
