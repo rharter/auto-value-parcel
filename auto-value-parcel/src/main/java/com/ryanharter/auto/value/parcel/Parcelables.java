@@ -360,7 +360,7 @@ final class Parcelables {
     else if (type.equals(SIZEF))
       block.add("$N.writeSizeF($N())", out, property.methodName);
     else if (type.equals(ENUM))
-      block.add("$N.writeString($N().name())", out, property.methodName);
+      block.add("$N.writeString((($T<?>) $N()).name())", out, Enum.class, property.methodName);
     else
       block.add("$N.writeValue($N())", out, property.methodName);
 

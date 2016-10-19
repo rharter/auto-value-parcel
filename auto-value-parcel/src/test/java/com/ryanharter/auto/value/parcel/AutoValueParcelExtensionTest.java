@@ -859,12 +859,12 @@ public class AutoValueParcelExtensionTest {
         "      dest.writeInt(0);\n" +
         "      dest.writeCharArray(ain());\n" +
         "    }\n" +
-        "    dest.writeString(aj().name());\n" +
+        "    dest.writeString(((Enum<?>) aj()).name());\n" +
         "    if (ajn() == null) {\n" +
         "      dest.writeInt(1);\n" +
         "    } else {\n" +
         "      dest.writeInt(0);\n" +
-        "      dest.writeString(ajn().name());\n" +
+        "      dest.writeString(((Enum<?>) ajn()).name());\n" +
         "    }\n" +
         "    dest.writeParcelable(ak(), flags);\n" +
         "    dest.writeParcelable(akn(), flags);\n" +
