@@ -1,5 +1,6 @@
 package com.ryanharter.auto.value.parcel;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
@@ -49,11 +50,15 @@ final class Parcelables {
   static final TypeName SIZEF = ClassName.get("android.util", "SizeF");
   static final TypeName TEXTUTILS = ClassName.get("android.text", "TextUtils");
   static final TypeName ENUM = ClassName.get(Enum.class);
+  static final TypeName IMMUTABLE_LIST = ClassName.get("com.google.common.collect", "ImmutableList");
+  static final TypeName IMMUTABLE_SET = ClassName.get("com.google.common.collect", "ImmutableSet");
+  static final TypeName IMMUTABLE_MAP = ClassName.get("com.google.common.collect", "ImmutableMap");
 
   private static final Set<TypeName> VALID_TYPES = ImmutableSet.of(STRING, MAP, LIST, BOOLEANARRAY,
       BYTEARRAY, CHARARRAY, INTARRAY, LONGARRAY, STRINGARRAY, SPARSEARRAY, SPARSEBOOLEANARRAY,
       BUNDLE, PARCELABLE, PARCELABLEARRAY, CHARSEQUENCE, IBINDER, OBJECTARRAY,
-      SERIALIZABLE, PERSISTABLEBUNDLE, SIZE, SIZEF);
+      SERIALIZABLE, PERSISTABLEBUNDLE, SIZE, SIZEF,
+      IMMUTABLE_LIST, IMMUTABLE_SET, IMMUTABLE_MAP);
 
   public static boolean isValidType(TypeName typeName) {
     return typeName.isPrimitive() || typeName.isBoxedPrimitive() || VALID_TYPES.contains(typeName);
@@ -171,6 +176,26 @@ final class Parcelables {
     }, null);
   }
 
+  private static List<TypeName> getParameterizedType(Types types, TypeMirror type) {
+    return type.accept(new SimpleTypeVisitor6<List<TypeName>, Types>() {
+      @Override
+      public List<TypeName> visitDeclared(DeclaredType t, Types types) {
+        List<? extends TypeMirror> args = t.getTypeArguments();
+        int size = args.size();
+
+        if (size == 1) {
+          return ImmutableList.of(TypeName.get(args.get(0)));
+        }
+
+        if (size == 2) {
+          return ImmutableList.of(TypeName.get(args.get(0)), TypeName.get(args.get(1)));
+        }
+
+        return ImmutableList.of();
+      }
+    }, types);
+  }
+
   static void readValue(CodeBlock.Builder block, AutoValueParcelExtension.Property property,
       final TypeName parcelableType, Types types) {
     boolean needsNullCheck = needsNullCheck(property, parcelableType);
@@ -209,6 +234,12 @@ final class Parcelables {
       }
     } else if (parcelableType.equals(CHARSEQUENCE)) {
       block.add("$T.CHAR_SEQUENCE_CREATOR.createFromParcel(in)", TEXTUTILS);
+    } else if (parcelableType.equals(IMMUTABLE_LIST)) {
+      readImmutableCollection(block, property, types, "List");
+    } else if (parcelableType.equals(IMMUTABLE_SET)) {
+      readImmutableCollection(block, property, types, "Set");
+    } else if (parcelableType.equals(IMMUTABLE_MAP)) {
+      readImmutableCollection(block, property, types, "Map");
     } else if (parcelableType.equals(MAP)) {
       block.add("($T) in.readHashMap($T.class.getClassLoader())", property.type,
           getParcelableComponent(types, property.element.getReturnType()));
@@ -270,9 +301,27 @@ final class Parcelables {
       block.add("($T) in.readValue($T.class.getClassLoader())", property.type,
           getParcelableComponent(types, property.element.getReturnType()));
     }
-
     if (needsNullCheck){
       block.add(" : null");
+    }
+  }
+
+  private static void readImmutableCollection(CodeBlock.Builder block,
+                                              AutoValueParcelExtension.Property property,
+                                              Types types,
+                                              String collectionType) {
+    List<TypeName> parameterizedType = getParameterizedType(types, property.element.getReturnType());
+    int count = parameterizedType.size();
+    if (count == 1) {
+      TypeName elementType = parameterizedType.get(0);
+      block.add("Immutable" + collectionType + ".<$T>copyOf(in.readArrayList($T.class.getClassLoader()))", elementType, elementType);
+    } else if (count == 2) {
+      TypeName keyType = parameterizedType.get(0);
+      TypeName valueType = parameterizedType.get(1);
+      block.add("ImmutableMap.<$T, $T>copyOf(in.readHashMap($T.class.getClassLoader()))", keyType, valueType, valueType);
+    } else {
+      TypeName type = getParcelableComponent(types, property.element.getReturnType());
+      block.add("Immutable" + collectionType + ".copyOf(in.readArrayList($T.class.getClassLoader()))", type);
     }
   }
 
@@ -323,10 +372,12 @@ final class Parcelables {
       block.add("$N.writeParcelable($N(), $N)", out, property.methodName, flags);
     else if (type.equals(CHARSEQUENCE))
       block.add("$T.writeToParcel($N(), $N, $N)", TEXTUTILS, property.methodName, out, flags);
-    else if (type.equals(MAP))
+    else if (type.equals(MAP) || type.equals(IMMUTABLE_MAP))
       block.add("$N.writeMap($N())", out, property.methodName);
-    else if (type.equals(LIST))
+    else if (type.equals(LIST) || type.equals(IMMUTABLE_LIST))
       block.add("$N.writeList($N())", out, property.methodName);
+    else if (type.equals(IMMUTABLE_SET))
+      block.add("$N.writeList($N().asList())", out, property.methodName);
     else if (type.equals(BOOLEANARRAY))
       block.add("$N.writeBooleanArray($N())", out, property.methodName);
     else if (type.equals(BYTEARRAY))
@@ -422,6 +473,9 @@ final class Parcelables {
 
   static boolean isTypeRequiresSuppressWarnings(TypeName type) {
     return type.equals(LIST) ||
-            type.equals(MAP);
+            type.equals(MAP) ||
+            type.equals(IMMUTABLE_LIST) ||
+            type.equals(IMMUTABLE_SET) ||
+            type.equals(IMMUTABLE_MAP);
   }
 }

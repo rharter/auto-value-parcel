@@ -517,6 +517,9 @@ public class AutoValueParcelExtensionTest {
         "import java.io.Serializable;\n" +
         "import java.util.List;\n" +
         "import java.util.Map;\n" +
+        "import com.google.common.collect.ImmutableList;\n" +
+        "import com.google.common.collect.ImmutableSet;\n" +
+        "import com.google.common.collect.ImmutableMap;\n" +
         "\n" +
         "@AutoValue public abstract class Foo implements Parcelable {\n" +
         "  public abstract String a();\n" +
@@ -585,6 +588,10 @@ public class AutoValueParcelExtensionTest {
         "  @Nullable public abstract Numbers ajn();\n" +
         "  public abstract Numbers2 ak();\n" +
         "  @Nullable public abstract Numbers2 akn();\n" +
+        "  public abstract ImmutableList<String> il();\n" +
+        "  public abstract ImmutableSet<String> it();\n" +
+        "  public abstract ImmutableMap<String, Integer> im();\n" +
+        "  public abstract ImmutableList ril();\n" +
         "}");
 
     JavaFileObject expected = JavaFileObjects.forSourceString("test/AutoValue_Foo", "" +
@@ -599,6 +606,9 @@ public class AutoValueParcelExtensionTest {
         "import android.util.SizeF;\n" +
         "import android.util.SparseArray;\n" +
         "import android.util.SparseBooleanArray;\n" +
+        "import com.google.common.collect.ImmutableList;\n" +
+        "import com.google.common.collect.ImmutableMap;\n" +
+        "import com.google.common.collect.ImmutableSet;\n" +
         "import java.io.Serializable;\n" +
         "import java.lang.Boolean;\n" +
         "import java.lang.Byte;\n" +
@@ -687,7 +697,11 @@ public class AutoValueParcelExtensionTest {
         "        Enum.valueOf(Numbers.class, in.readString()),\n" +
         "        in.readInt() == 0 ? Enum.valueOf(Numbers.class, in.readString()) : null,\n" +
         "        (Numbers2) in.readParcelable(Numbers2.class.getClassLoader()),\n" +
-        "        (Numbers2) in.readParcelable(Numbers2.class.getClassLoader())\n" +
+        "        (Numbers2) in.readParcelable(Numbers2.class.getClassLoader()),\n" +
+        "        ImmutableList.<String>copyOf(in.readArrayList(String.class.getClassLoader())),\n" +
+        "        ImmutableSet.<String>copyOf(in.readArrayList(String.class.getClassLoader())),\n" +
+        "        ImmutableMap.<String, Integer>copyOf(in.readHashMap(Integer.class.getClassLoader())),\n" +
+        "        ImmutableList.copyOf(in.readArrayList(ImmutableList.class.getClassLoader()))\n" +
         "      );\n" +
         "    }\n" +
         "    @Override\n" +
@@ -696,8 +710,8 @@ public class AutoValueParcelExtensionTest {
         "    }\n" +
         "  };\n" +
         "\n" +
-        "  AutoValue_Foo(String a, String an, byte b, Byte B, Byte BN, int c, Integer C, Integer CN, short d, Short D, Short DN, long e, Long E, Long EN, float f, Float F, Float FN, double g, Double G, Double GN, boolean h, Boolean H, Boolean HN, Parcelable i, Parcelable in, CharSequence j, CharSequence jn, Map<String, String> k, Map<String, String> kn, List<String> l, List<String> ln, boolean[] m, boolean[] mn, byte[] n, byte[] nn, int[] s, int[] sn, long[] t, long[] tn, Serializable u, Serializable un, SparseArray w, SparseArray wn, SparseBooleanArray x, SparseBooleanArray xn, Bundle y, Bundle yn, PersistableBundle z, PersistableBundle zn, Size aa, Size aan, SizeF ab, SizeF abn, Parcelable1 ad, Parcelable1 adn, FooBinder ae, FooBinder aen, char ag, Character ah, Character ahn, char[] ai, char[] ain, Numbers aj, Numbers ajn, Numbers2 ak, Numbers2 akn) {\n" +
-        "    super(a, an, b, B, BN, c, C, CN, d, D, DN, e, E, EN, f, F, FN, g, G, GN, h, H, HN, i, in, j, jn, k, kn, l, ln, m, mn, n, nn, s, sn, t, tn, u, un, w, wn, x, xn, y, yn, z, zn, aa, aan, ab, abn, ad, adn, ae, aen, ag, ah, ahn, ai, ain, aj, ajn, ak, akn);\n" +
+        "  AutoValue_Foo(String a, String an, byte b, Byte B, Byte BN, int c, Integer C, Integer CN, short d, Short D, Short DN, long e, Long E, Long EN, float f, Float F, Float FN, double g, Double G, Double GN, boolean h, Boolean H, Boolean HN, Parcelable i, Parcelable in, CharSequence j, CharSequence jn, Map<String, String> k, Map<String, String> kn, List<String> l, List<String> ln, boolean[] m, boolean[] mn, byte[] n, byte[] nn, int[] s, int[] sn, long[] t, long[] tn, Serializable u, Serializable un, SparseArray w, SparseArray wn, SparseBooleanArray x, SparseBooleanArray xn, Bundle y, Bundle yn, PersistableBundle z, PersistableBundle zn, Size aa, Size aan, SizeF ab, SizeF abn, Parcelable1 ad, Parcelable1 adn, FooBinder ae, FooBinder aen, char ag, Character ah, Character ahn, char[] ai, char[] ain, Numbers aj, Numbers ajn, Numbers2 ak, Numbers2 akn, ImmutableList<String> il, ImmutableSet<String> it, ImmutableMap<String, Integer> im, ImmutableList ril) {\n" +
+        "    super(a, an, b, B, BN, c, C, CN, d, D, DN, e, E, EN, f, F, FN, g, G, GN, h, H, HN, i, in, j, jn, k, kn, l, ln, m, mn, n, nn, s, sn, t, tn, u, un, w, wn, x, xn, y, yn, z, zn, aa, aan, ab, abn, ad, adn, ae, aen, ag, ah, ahn, ai, ain, aj, ajn, ak, akn, il, it, im, ril);\n" +
         "  }\n" +
         "\n" +
         "  @Override\n" +
@@ -868,6 +882,10 @@ public class AutoValueParcelExtensionTest {
         "    }\n" +
         "    dest.writeParcelable(ak(), flags);\n" +
         "    dest.writeParcelable(akn(), flags);\n" +
+        "    dest.writeList(il());\n" +
+        "    dest.writeList(it().asList());\n" +
+        "    dest.writeMap(im());\n" +
+        "    dest.writeList(ril());\n" +
         "  }\n" +
         "\n" +
         "  @Override\n" +
