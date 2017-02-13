@@ -235,11 +235,11 @@ final class Parcelables {
     } else if (parcelableType.equals(CHARSEQUENCE)) {
       block.add("$T.CHAR_SEQUENCE_CREATOR.createFromParcel(in)", TEXTUTILS);
     } else if (parcelableType.equals(IMMUTABLE_LIST)) {
-      readImmutableCollection(block, property, types, "List");
+      readImmutableCollection(block, property, types, "List", "ArrayList");
     } else if (parcelableType.equals(IMMUTABLE_SET)) {
-      readImmutableCollection(block, property, types, "Set");
+      readImmutableCollection(block, property, types, "Set", "ArrayList");
     } else if (parcelableType.equals(IMMUTABLE_MAP)) {
-      readImmutableCollection(block, property, types, "Map");
+      readImmutableCollection(block, property, types, "Map", "HashMap");
     } else if (parcelableType.equals(MAP)) {
       block.add("($T) in.readHashMap($T.class.getClassLoader())", property.type,
           getParcelableComponent(types, property.element.getReturnType()));
@@ -309,19 +309,21 @@ final class Parcelables {
   private static void readImmutableCollection(CodeBlock.Builder block,
                                               AutoValueParcelExtension.Property property,
                                               Types types,
-                                              String collectionType) {
+                                              String kind,
+                                              String concreteType) {
     List<TypeName> parameterizedType = getParameterizedType(types, property.element.getReturnType());
     int count = parameterizedType.size();
     if (count == 1) {
       TypeName elementType = parameterizedType.get(0);
-      block.add("Immutable" + collectionType + ".<$T>copyOf(in.readArrayList($T.class.getClassLoader()))", elementType, elementType);
+      block.add("Immutable" + kind + ".<$T>copyOf(in.read" + concreteType + "($T.class.getClassLoader()))",
+        elementType, elementType);
     } else if (count == 2) {
       TypeName keyType = parameterizedType.get(0);
       TypeName valueType = parameterizedType.get(1);
       block.add("ImmutableMap.<$T, $T>copyOf(in.readHashMap($T.class.getClassLoader()))", keyType, valueType, valueType);
     } else {
       TypeName type = getParcelableComponent(types, property.element.getReturnType());
-      block.add("Immutable" + collectionType + ".copyOf(in.readArrayList($T.class.getClassLoader()))", type);
+      block.add("Immutable" + kind + ".copyOf(in.read" + concreteType + "($T.class.getClassLoader()))", type);
     }
   }
 
