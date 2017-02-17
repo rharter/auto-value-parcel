@@ -8,7 +8,7 @@ dependencies {
     compile 'com.google.auto.value:auto-value:1.3'
     compile 'com.google.auto:auto-common:0.6'
     compile 'org.apache.commons:commons-lang3:3.4'
-    compile 'com.google.auto.service:auto-service:1.0-rc2'
+    compileOnly 'com.google.auto.service:auto-service:1.0-rc2'
     compile project(':adapter')
 
     testCompile 'junit:junit:4.11'
