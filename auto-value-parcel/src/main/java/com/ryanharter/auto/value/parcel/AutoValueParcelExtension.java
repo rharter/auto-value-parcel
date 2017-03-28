@@ -153,6 +153,8 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
   public String generateClass(Context context, String className, String classToExtend,
                               boolean isFinal) {
     ProcessingEnvironment env = context.processingEnvironment();
+    TypeName autoValueType =
+        TypeName.get(env.getTypeUtils().erasure(context.autoValueClass().asType()));
 
     ImmutableList<Property> properties = readProperties(context.properties());
     validateProperties(env, properties);
@@ -171,7 +173,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
       }
     }
 
-    subclass.addField(generateCreator(env, properties, type, typeAdapters));
+    subclass.addField(generateCreator(env, autoValueType, properties, type, typeAdapters));
 
     ClassName superClass = ClassName.get(context.packageName(), classToExtend);
     List<? extends TypeParameterElement> tpes = context.autoValueClass().getTypeParameters();
@@ -303,8 +305,8 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     return builder.build();
   }
 
-  FieldSpec generateCreator(ProcessingEnvironment env, List<Property> properties, TypeName type,
-      Map<TypeMirror, FieldSpec> typeAdapters) {
+  FieldSpec generateCreator(ProcessingEnvironment env, TypeName autoValueType,
+      List<Property> properties, TypeName type, Map<TypeMirror, FieldSpec> typeAdapters) {
     ClassName creator = ClassName.bestGuess("android.os.Parcelable.Creator");
     TypeName creatorOfClass = ParameterizedTypeName.get(creator, type);
 
@@ -321,7 +323,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
       } else {
         final TypeName typeName = Parcelables.getTypeNameFromProperty(property, typeUtils);
         requiresSuppressWarnings |= Parcelables.isTypeRequiresSuppressWarnings(typeName);
-        Parcelables.readValue(ctorCall, property, typeName, env.getTypeUtils());
+        Parcelables.readValue(ctorCall, property, typeName, autoValueType);
       }
 
       if (i < n - 1) ctorCall.add(",");

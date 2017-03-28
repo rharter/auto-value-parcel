@@ -9,19 +9,15 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeVariableName;
-
 import java.util.List;
 import java.util.Set;
-
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.SimpleTypeVisitor6;
-import javax.lang.model.util.SimpleTypeVisitor7;
 import javax.lang.model.util.Types;
 
 final class Parcelables {
@@ -138,41 +134,8 @@ final class Parcelables {
     return false;
   }
 
-  /**
-   * Returns the component of the type that is Parcelable, or descends from a Parcelable type.
-   */
-  private static TypeName getParcelableComponent(final Types types, TypeMirror type) {
-    final TypeMirror typeFinal;
-    if (type.getKind() == TypeKind.TYPEVAR) {
-      TypeVariable vType = (TypeVariable) type;
-      typeFinal = vType.getUpperBound();
-    } else {
-      typeFinal = type;
-    }
-    return typeFinal.accept(new SimpleTypeVisitor7<TypeName, Void>() {
-      @Override
-      public TypeName visitDeclared(DeclaredType t, Void aVoid) {
-        TypeName typeFinal = TypeName.get(t);
-        while (typeFinal instanceof ParameterizedTypeName && !((ParameterizedTypeName) typeFinal).typeArguments.isEmpty()) {
-          List<TypeName> args = ((ParameterizedTypeName) typeFinal).typeArguments;
-          typeFinal = args.get(args.size() - 1);
-        }
-        return typeFinal;
-      }
-
-      @Override public TypeName visitArray(ArrayType t, Void aVoid) {
-        TypeMirror component = t.getComponentType();
-        if (getParcelableType(types, (TypeElement) types.asElement(component)) != null) {
-          return TypeName.get(component);
-        }
-
-        return TypeName.get(t);
-      }
-    }, null);
-  }
-
   static void readValue(CodeBlock.Builder block, AutoValueParcelExtension.Property property,
-      final TypeName parcelableType, Types types) {
+      final TypeName parcelableType, TypeName autoValueType) {
     boolean needsNullCheck = needsNullCheck(property, parcelableType);
     if (needsNullCheck){
       block.add("in.readInt() == 0 ? ");
@@ -200,21 +163,16 @@ final class Parcelables {
       TypeName check = property.type instanceof TypeVariableName
               ? ((TypeVariableName) property.type).bounds.get(0)
               : property.type;
-      if (check.equals(PARCELABLE)) {
-        block.add("in.readParcelable($T.class.getClassLoader())",
-            getParcelableComponent(types, property.element.getReturnType()));
-      } else {
-        block.add("($T) in.readParcelable($T.class.getClassLoader())", property.type,
-            getParcelableComponent(types, property.element.getReturnType()));
+      if (!check.equals(PARCELABLE)) {
+        block.add("($T) ", property.type);
       }
+      block.add("in.readParcelable($T.class.getClassLoader())", autoValueType);
     } else if (parcelableType.equals(CHARSEQUENCE)) {
       block.add("$T.CHAR_SEQUENCE_CREATOR.createFromParcel(in)", TEXTUTILS);
     } else if (parcelableType.equals(MAP)) {
-      block.add("($T) in.readHashMap($T.class.getClassLoader())", property.type,
-          getParcelableComponent(types, property.element.getReturnType()));
+      block.add("($T) in.readHashMap($T.class.getClassLoader())", property.type, autoValueType);
     } else if (parcelableType.equals(LIST)) {
-      block.add("($T) in.readArrayList($T.class.getClassLoader())", property.type,
-          getParcelableComponent(types, property.element.getReturnType()));
+      block.add("($T) in.readArrayList($T.class.getClassLoader())", property.type, autoValueType);
     } else if (parcelableType.equals(BOOLEANARRAY)) {
       block.add("in.createBooleanArray()");
     } else if (parcelableType.equals(BYTEARRAY)) {
@@ -230,8 +188,7 @@ final class Parcelables {
         block.add("($T) in.readStrongBinder()", property.type);
       }
     } else if (parcelableType.equals(OBJECTARRAY)) {
-      block.add("in.readArray($T.class.getClassLoader())",
-          getParcelableComponent(types, property.element.getReturnType()));
+      block.add("in.readArray($T.class.getClassLoader())", autoValueType);
     } else if (parcelableType.equals(INTARRAY)) {
       block.add("in.createIntArray()");
     } else if (parcelableType.equals(LONGARRAY)) {
@@ -244,22 +201,18 @@ final class Parcelables {
       }
     } else if (parcelableType.equals(PARCELABLEARRAY)) {
         ArrayTypeName atype = (ArrayTypeName) property.type;
-        if (atype.componentType.equals(PARCELABLE)) {
-          block.add("in.readParcelableArray($T.class.getClassLoader())",
-              getParcelableComponent(types, property.element.getReturnType()));
-        } else {
-          block.add("($T) in.readParcelableArray($T.class.getClassLoader())", property.type,
-              getParcelableComponent(types, property.element.getReturnType()));
+        if (!atype.componentType.equals(PARCELABLE)) {
+          block.add("($T) ", property.type);
         }
+      block.add("in.readParcelableArray($T.class.getClassLoader())", autoValueType);
     } else if (parcelableType.equals(SPARSEARRAY)) {
-      block.add("in.readSparseArray($T.class.getClassLoader())",
-          getParcelableComponent(types, property.element.getReturnType()));
+      block.add("in.readSparseArray($T.class.getClassLoader())", autoValueType);
     } else if (parcelableType.equals(SPARSEBOOLEANARRAY)) {
       block.add("in.readSparseBooleanArray()");
     } else if (parcelableType.equals(BUNDLE)) {
-      block.add("in.readBundle($T.class.getClassLoader())", property.type);
+      block.add("in.readBundle($T.class.getClassLoader())", autoValueType);
     } else if (parcelableType.equals(PERSISTABLEBUNDLE)) {
-      block.add("in.readPersistableBundle($T.class.getClassLoader())", property.type);
+      block.add("in.readPersistableBundle($T.class.getClassLoader())", autoValueType);
     } else if (parcelableType.equals(SIZE)) {
       block.add("in.readSize()");
     } else if (parcelableType.equals(SIZEF)) {
@@ -267,8 +220,7 @@ final class Parcelables {
     } else if (parcelableType.equals(ENUM)) {
       block.add("$T.valueOf($T.class, in.readString())", Enum.class, property.type);
     } else {
-      block.add("($T) in.readValue($T.class.getClassLoader())", property.type,
-          getParcelableComponent(types, property.element.getReturnType()));
+      block.add("($T) in.readValue($T.class.getClassLoader())", property.type, autoValueType);
     }
 
     if (needsNullCheck){
