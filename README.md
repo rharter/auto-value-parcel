@@ -34,7 +34,7 @@ public class DateTypeAdapter implements TypeAdapter<Date> {
   public Date fromParcel(Parcel in) {
     return new Date(in.readLong());
   }
-
+  
   public void toParcel(Date value, Parcel dest) {
     dest.writeLong(value.getTime());
   }
