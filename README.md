@@ -13,7 +13,7 @@ annotated classed implement `Parcelable`.
 ```java
 @AutoValue public abstract class Foo implements Parcelable {
 
-public abstract String bar();
+  public abstract String bar();
 
 }
 ```
@@ -31,13 +31,13 @@ parcel and unparcel those properties manually.
 
 ```java
 public class DateTypeAdapter implements TypeAdapter<Date> {
-public Date fromParcel(Parcel in) {
-return new Date(in.readLong());
-}
+  public Date fromParcel(Parcel in) {
+    return new Date(in.readLong());
+  }
 
-public void toParcel(Date value, Parcel dest) {
-dest.writeLong(value.getTime());
-}
+  public void toParcel(Date value, Parcel dest) {
+    dest.writeLong(value.getTime());
+  }
 }
 ```
 
@@ -46,7 +46,7 @@ the `ParcelAdapter` annotation to any property you'd like to be serialized with 
 
 ```java
 @AutoValue public abstract class Foo implements Parcelable {
-@ParcelAdapter(DateTypeAdapter.class) public abstract Date date();
+  @ParcelAdapter(DateTypeAdapter.class) public abstract Date date();
 }
 ```
 
@@ -68,7 +68,7 @@ annotationProcessor 'com.ryanharter.auto.value:auto-value-parcel:0.2.5'
 compile 'com.ryanharter.auto.value:auto-value-parcel-adapter:0.2.5'
 ```
 
-([Migrating](https://bitbucket.org/hvisser/android-apt/wiki/Migration)  from apt to annotationProcessor)
+([Migrating](https://bitbucket.org/hvisser/android-apt/wiki/Migration) from `apt` to `annotationProcessor`)
 
 ## License
 
@@ -79,7 +79,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-http://www.apache.org/licenses/LICENSE-2.0
+   http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
