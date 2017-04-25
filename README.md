@@ -62,13 +62,13 @@ compile 'com.ryanharter.auto.value:auto-value-parcel-adapter:0.2.5'
 Add a Gradle dependency:
 
 ```groovy
-apt 'com.ryanharter.auto.value:auto-value-parcel:0.2.5'
+annotationProcessor 'com.ryanharter.auto.value:auto-value-parcel:0.2.5'
 
 // Optionally for TypeAdapter support
 compile 'com.ryanharter.auto.value:auto-value-parcel-adapter:0.2.5'
 ```
 
-(Using the [android-apt](https://bitbucket.org/hvisser/android-apt) plugin)
+(Migrating from apt to annotationProcessor [android-apt](https://bitbucket.org/hvisser/android-apt) plugin)
 
 ## License
 
