@@ -1863,7 +1863,8 @@ public class AutoValueParcelExtensionTest {
 
   private AutoValueExtension.Context createContext(TypeElement type) {
     String packageName = MoreElements.getPackage(type).getQualifiedName().toString();
-    Set<ExecutableElement> allMethods = MoreElements.getLocalAndInheritedMethods(type, elements);
+    Set<ExecutableElement> allMethods = MoreElements.getLocalAndInheritedMethods(
+        type, processingEnvironment.getTypeUtils(), elements);
     Set<ExecutableElement> methods = methodsToImplement(type, allMethods);
     Map<String, ExecutableElement> properties = new LinkedHashMap<String, ExecutableElement>();
     for (ExecutableElement e : methods) {

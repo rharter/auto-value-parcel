@@ -197,7 +197,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
   private static boolean needsContentDescriptor(Context context) {
     ProcessingEnvironment env = context.processingEnvironment();
     for (ExecutableElement element : MoreElements.getLocalAndInheritedMethods(
-        context.autoValueClass(), env.getElementUtils())) {
+        context.autoValueClass(), env.getTypeUtils(), env.getElementUtils())) {
       if (element.getSimpleName().contentEquals("describeContents")
           && MoreTypes.isTypeOf(int.class, element.getReturnType())
           && element.getParameters().isEmpty()
@@ -212,7 +212,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     ProcessingEnvironment env = context.processingEnvironment();
     TypeMirror parcel = env.getElementUtils().getTypeElement("android.os.Parcel").asType();
     for (ExecutableElement element : MoreElements.getLocalAndInheritedMethods(
-        context.autoValueClass(), env.getElementUtils())) {
+        context.autoValueClass(), env.getTypeUtils(), env.getElementUtils())) {
       if (element.getSimpleName().contentEquals("writeToParcel")
           && MoreTypes.isTypeOf(void.class, element.getReturnType())
           && !element.getModifiers().contains(ABSTRACT)) {
