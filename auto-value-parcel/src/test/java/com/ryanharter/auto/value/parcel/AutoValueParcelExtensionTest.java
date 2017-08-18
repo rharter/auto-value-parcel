@@ -187,7 +187,7 @@ public class AutoValueParcelExtensionTest {
         "    }\n" +
         "  };\n" +
         "\n" +
-        "  AutoValue_Test(int a, Double b, String c, long d) {\n" +
+        "  AutoValue_Test(int a, @Nullable Double b, String c, long d) {\n" +
         "    super(a, b, c, d);\n" +
         "  }\n" +
         "\n" +
@@ -696,7 +696,7 @@ public class AutoValueParcelExtensionTest {
         "    }\n" +
         "  };\n" +
         "\n" +
-        "  AutoValue_Foo(String a, String an, byte b, Byte B, Byte BN, int c, Integer C, Integer CN, short d, Short D, Short DN, long e, Long E, Long EN, float f, Float F, Float FN, double g, Double G, Double GN, boolean h, Boolean H, Boolean HN, Parcelable i, Parcelable in, CharSequence j, CharSequence jn, Map<String, String> k, Map<String, String> kn, List<String> l, List<String> ln, boolean[] m, boolean[] mn, byte[] n, byte[] nn, int[] s, int[] sn, long[] t, long[] tn, Serializable u, Serializable un, SparseArray w, SparseArray wn, SparseBooleanArray x, SparseBooleanArray xn, Bundle y, Bundle yn, PersistableBundle z, PersistableBundle zn, Size aa, Size aan, SizeF ab, SizeF abn, Parcelable1 ad, Parcelable1 adn, FooBinder ae, FooBinder aen, char ag, Character ah, Character ahn, char[] ai, char[] ain, Numbers aj, Numbers ajn, Numbers2 ak, Numbers2 akn) {\n" +
+        "  AutoValue_Foo(String a, @Nullable String an, byte b, Byte B, @Nullable Byte BN, int c, Integer C, @Nullable Integer CN, short d, Short D, @Nullable Short DN, long e, Long E, @Nullable Long EN, float f, Float F, @Nullable Float FN, double g, Double G, @Nullable Double GN, boolean h, Boolean H, @Nullable Boolean HN, Parcelable i, @Nullable Parcelable in, CharSequence j, @Nullable CharSequence jn, Map<String, String> k, @Nullable Map<String, String> kn, List<String> l, @Nullable List<String> ln, boolean[] m, @Nullable boolean[] mn, byte[] n, @Nullable byte[] nn, int[] s, @Nullable int[] sn, long[] t, @Nullable long[] tn, Serializable u, @Nullable Serializable un, SparseArray w, @Nullable SparseArray wn, SparseBooleanArray x, @Nullable SparseBooleanArray xn, Bundle y, @Nullable Bundle yn, PersistableBundle z, @Nullable PersistableBundle zn, Size aa, @Nullable Size aan, SizeF ab, @Nullable SizeF abn, Parcelable1 ad, @Nullable Parcelable1 adn, FooBinder ae, @Nullable FooBinder aen, char ag, Character ah, @Nullable Character ahn, char[] ai, @Nullable char[] ain, Numbers aj, @Nullable Numbers ajn, Numbers2 ak, @Nullable Numbers2 akn) {\n" +
         "    super(a, an, b, B, BN, c, C, CN, d, D, DN, e, E, EN, f, F, FN, g, G, GN, h, H, HN, i, in, j, jn, k, kn, l, ln, m, mn, n, nn, s, sn, t, tn, u, un, w, wn, x, xn, y, yn, z, zn, aa, aan, ab, abn, ad, adn, ae, aen, ag, ah, ahn, ai, ain, aj, ajn, ak, akn);\n" +
         "  }\n" +
         "\n" +
@@ -1325,7 +1325,7 @@ public class AutoValueParcelExtensionTest {
         + "    }\n"
         + "  };\n"
         + "\n"
-        + "  AutoValue_Foo(Bar barNullable, Bar barNonNullable) {\n"
+        + "  AutoValue_Foo(@Nullable Bar barNullable, Bar barNonNullable) {\n"
         + "    super(barNullable, barNonNullable);\n"
         + "  }\n"
         + "\n"

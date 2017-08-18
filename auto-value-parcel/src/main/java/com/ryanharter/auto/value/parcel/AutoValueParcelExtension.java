@@ -82,13 +82,22 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     }
 
     public boolean nullable() {
-      return annotations.contains("Nullable");
+      return !nullableAnnotation().isEmpty();
+    }
+
+    public String nullableAnnotation() {
+      for (String annotationString : annotations) {
+        if (annotationString.equals("@Nullable") || annotationString.endsWith(".Nullable")) {
+          return annotationString;
+        }
+      }
+      return "";
     }
 
     private ImmutableSet<String> buildAnnotations(ExecutableElement element) {
       ImmutableSet.Builder<String> builder = ImmutableSet.builder();
       for (AnnotationMirror annotation : element.getAnnotationMirrors()) {
-        builder.add(annotation.getAnnotationType().asElement().getSimpleName().toString());
+        builder.add(annotation.getAnnotationType().asElement().toString());
       }
       return builder.build();
     }
@@ -284,7 +293,11 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
   MethodSpec generateConstructor(List<Property> properties) {
     List<ParameterSpec> params = Lists.newArrayListWithCapacity(properties.size());
     for (Property property : properties) {
-      params.add(ParameterSpec.builder(property.type, property.humanName).build());
+      ParameterSpec.Builder builder = ParameterSpec.builder(property.type, property.humanName);
+      if (property.nullable()) {
+        builder.addAnnotation(ClassName.bestGuess(property.nullableAnnotation()));
+      }
+      params.add(builder.build());
     }
 
     MethodSpec.Builder builder = MethodSpec.constructorBuilder()
