@@ -62,6 +62,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     final ExecutableElement element;
     final TypeName type;
     final ImmutableSet<String> annotations;
+    final boolean nullable;
     TypeMirror typeAdapter;
 
     public Property(String humanName, ExecutableElement element) {
@@ -70,6 +71,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
       this.element = element;
       type = TypeName.get(element.getReturnType());
       annotations = buildAnnotations(element);
+      nullable = nullableAnnotation() != null;
 
       ParcelAdapter parcelAdapter = element.getAnnotation(ParcelAdapter.class);
       if (parcelAdapter != null) {
@@ -82,7 +84,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     }
 
     public boolean nullable() {
-      return !nullableAnnotation().isEmpty();
+      return nullable;
     }
 
     public String nullableAnnotation() {
@@ -91,7 +93,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
           return annotationString;
         }
       }
-      return "";
+      return null;
     }
 
     private ImmutableSet<String> buildAnnotations(ExecutableElement element) {
