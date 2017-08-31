@@ -645,14 +645,14 @@ public class AutoValueParcelExtensionTest {
         "        in.readInt() == 1,\n" +
         "        in.readInt() == 1,\n" +
         "        in.readInt() == 0 ? in.readInt() == 1 : null,\n" +
-        "        in.readParcelable(Parcelable.class.getClassLoader()),\n" +
-        "        in.readParcelable(Parcelable.class.getClassLoader()),\n" +
+        "        in.readParcelable(Foo.class.getClassLoader()),\n" +
+        "        in.readParcelable(Foo.class.getClassLoader()),\n" +
         "        TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(in),\n" +
         "        in.readInt() == 0 ? TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(in) : null,\n" +
-        "        (Map<String, String>) in.readHashMap(String.class.getClassLoader()),\n" +
-        "        (Map<String, String>) in.readHashMap(String.class.getClassLoader()),\n" +
-        "        (List<String>) in.readArrayList(String.class.getClassLoader()),\n" +
-        "        (List<String>) in.readArrayList(String.class.getClassLoader()),\n" +
+        "        (Map<String, String>) in.readHashMap(Foo.class.getClassLoader()),\n" +
+        "        (Map<String, String>) in.readHashMap(Foo.class.getClassLoader()),\n" +
+        "        (List<String>) in.readArrayList(Foo.class.getClassLoader()),\n" +
+        "        (List<String>) in.readArrayList(Foo.class.getClassLoader()),\n" +
         "        in.createBooleanArray(),\n" +
         "        in.readInt() == 0 ? in.createBooleanArray() : null,\n" +
         "        in.createByteArray(),\n" +
@@ -663,20 +663,20 @@ public class AutoValueParcelExtensionTest {
         "        in.readInt() == 0 ? in.createLongArray() : null,\n" +
         "        in.readSerializable(),\n" +
         "        in.readInt() == 0 ? in.readSerializable() : null,\n" +
-        "        in.readSparseArray(SparseArray.class.getClassLoader()),\n" +
-        "        in.readSparseArray(SparseArray.class.getClassLoader()),\n" +
+        "        in.readSparseArray(Foo.class.getClassLoader()),\n" +
+        "        in.readSparseArray(Foo.class.getClassLoader()),\n" +
         "        in.readSparseBooleanArray(),\n" +
         "        in.readSparseBooleanArray(),\n" +
-        "        in.readBundle(Bundle.class.getClassLoader()),\n" +
-        "        in.readBundle(Bundle.class.getClassLoader()),\n" +
-        "        in.readPersistableBundle(PersistableBundle.class.getClassLoader()),\n" +
-        "        in.readPersistableBundle(PersistableBundle.class.getClassLoader()),\n" +
+        "        in.readBundle(Foo.class.getClassLoader()),\n" +
+        "        in.readBundle(Foo.class.getClassLoader()),\n" +
+        "        in.readPersistableBundle(Foo.class.getClassLoader()),\n" +
+        "        in.readPersistableBundle(Foo.class.getClassLoader()),\n" +
         "        in.readSize(),\n" +
         "        in.readInt() == 0 ? in.readSize() : null,\n" +
         "        in.readSizeF(),\n" +
         "        in.readInt() == 0 ? in.readSizeF() : null,\n" +
-        "        (Parcelable1) in.readParcelable(Parcelable1.class.getClassLoader()),\n" +
-        "        (Parcelable1) in.readParcelable(Parcelable1.class.getClassLoader()),\n" +
+        "        (Parcelable1) in.readParcelable(Foo.class.getClassLoader()),\n" +
+        "        (Parcelable1) in.readParcelable(Foo.class.getClassLoader()),\n" +
         "        (FooBinder) in.readStrongBinder(),\n" +
         "        in.readInt() == 0 ? (FooBinder) in.readStrongBinder() : null,\n" +
         "        (char) in.readInt(),\n" +
@@ -686,8 +686,8 @@ public class AutoValueParcelExtensionTest {
         "        in.readInt() == 0 ? in.createCharArray() : null,\n" +
         "        Enum.valueOf(Numbers.class, in.readString()),\n" +
         "        in.readInt() == 0 ? Enum.valueOf(Numbers.class, in.readString()) : null,\n" +
-        "        (Numbers2) in.readParcelable(Numbers2.class.getClassLoader()),\n" +
-        "        (Numbers2) in.readParcelable(Numbers2.class.getClassLoader())\n" +
+        "        (Numbers2) in.readParcelable(Foo.class.getClassLoader()),\n" +
+        "        (Numbers2) in.readParcelable(Foo.class.getClassLoader())\n" +
         "      );\n" +
         "    }\n" +
         "    @Override\n" +
@@ -919,10 +919,10 @@ public class AutoValueParcelExtensionTest {
         "    @SuppressWarnings(\"unchecked\")" +
         "    public AutoValue_Test createFromParcel(Parcel in) {\n" +
         "      return new AutoValue_Test(\n" +
-        "          (Map) in.readHashMap(Map.class.getClassLoader()),\n" +
-        "          (Map<String, CharSequence>) in.readHashMap(CharSequence.class.getClassLoader()),\n" +
-        "          (List) in.readArrayList(List.class.getClassLoader()),\n" +
-        "          (List<String>) in.readArrayList(String.class.getClassLoader())" +
+        "          (Map) in.readHashMap(Test.class.getClassLoader()),\n" +
+        "          (Map<String, CharSequence>) in.readHashMap(Test.class.getClassLoader()),\n" +
+        "          (List) in.readArrayList(Test.class.getClassLoader()),\n" +
+        "          (List<String>) in.readArrayList(Test.class.getClassLoader())" +
         "      );\n" +
         "    }\n" +
         "    @Override\n" +
@@ -1110,9 +1110,9 @@ public class AutoValueParcelExtensionTest {
         + "    @SuppressWarnings(\"unchecked\")\n"
         + "    public AutoValue_Foo createFromParcel(Parcel in) {\n"
         + "      return new AutoValue_Foo(\n"
-        + "          (List<String>) in.readArrayList(String.class.getClassLoader()),\n"
-        + "          (List<List<String>>) in.readArrayList(String.class.getClassLoader()),\n"
-        + "          (List<List<List<String>>>) in.readArrayList(String.class.getClassLoader())\n"
+        + "          (List<String>) in.readArrayList(Foo.class.getClassLoader()),\n"
+        + "          (List<List<String>>) in.readArrayList(Foo.class.getClassLoader()),\n"
+        + "          (List<List<List<String>>>) in.readArrayList(Foo.class.getClassLoader())\n"
         + "      );\n"
         + "    }\n"
         + "    @Override\n"
@@ -1388,7 +1388,7 @@ public class AutoValueParcelExtensionTest {
         + "    @Override\n"
         + "    public AutoValue_Foo createFromParcel(Parcel in) {\n"
         + "      return new AutoValue_Foo(\n"
-        + "          (Param) in.readParcelable(Param.class.getClassLoader())\n"
+        + "          (Param) in.readParcelable(Foo.class.getClassLoader())\n"
         + "      );\n"
         + "    }\n"
         + "    @Override\n"
@@ -1447,7 +1447,7 @@ public class AutoValueParcelExtensionTest {
             "    @SuppressWarnings(\"unchecked\")\n" +
             "    public AutoValue_Test createFromParcel(Parcel in) {\n" +
             "      return new AutoValue_Test(\n" +
-            "          (List<String>) in.readArrayList(String.class.getClassLoader())\n" +
+            "          (List<String>) in.readArrayList(Test.class.getClassLoader())\n" +
             "      );\n" +
             "    }\n" +
             "    @Override\n" +
@@ -1506,7 +1506,7 @@ public class AutoValueParcelExtensionTest {
             "    @SuppressWarnings(\"unchecked\")\n" +
             "    public AutoValue_Test createFromParcel(Parcel in) {\n" +
             "      return new AutoValue_Test(\n" +
-            "          (Map<String, String>) in.readHashMap(String.class.getClassLoader())\n" +
+            "          (Map<String, String>) in.readHashMap(Test.class.getClassLoader())\n" +
             "      );\n" +
             "    }\n" +
             "    @Override\n" +
@@ -1611,7 +1611,7 @@ public class AutoValueParcelExtensionTest {
             "          in.readSerializable(),\n" +
             "          in.readSize(),\n" +
             "          in.readSizeF(),\n" +
-            "          in.readPersistableBundle(PersistableBundle.class.getClassLoader())\n" +
+            "          in.readPersistableBundle(Test.class.getClassLoader())\n" +
             "      );\n" +
             "    }\n" +
             "    @Override\n" +
@@ -1684,7 +1684,7 @@ public class AutoValueParcelExtensionTest {
             "    @Override\n" +
             "    public AutoValue_Test createFromParcel(Parcel in) {\n" +
             "      return new AutoValue_Test(\n" +
-            "          in.readParcelable(Parcelable.class.getClassLoader())\n" +
+            "          in.readParcelable(Test.class.getClassLoader())\n" +
             "      );\n" +
             "    }\n" +
             "    @Override\n" +
@@ -1743,7 +1743,7 @@ public class AutoValueParcelExtensionTest {
             "    @Override\n" +
             "    public AutoValue_Test createFromParcel(Parcel in) {\n" +
             "      return new AutoValue_Test(\n" +
-            "          in.readParcelable(Parcelable.class.getClassLoader()),\n" +
+            "          in.readParcelable(Test.class.getClassLoader()),\n" +
             "          in.readString(),\n" +
             "          in.readInt()\n" +
             "      );\n" +
