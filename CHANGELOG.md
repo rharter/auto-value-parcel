@@ -1,5 +1,14 @@
 # Change Log
 
+## Version 0.2.6 (2017-12-06)
+
+Supports: AutoValue 1.5.2
+
+* Use Enum.valueOf instead of per-enum valueOf method. (#97) 
+* Explicitly call name() on the Enum type instead of the implementation. (#98)
+* Generate Nullable annotation at constructor arguments. (#124)
+* Update from apt to annotationProcessor
+
 ## Version 0.2.5 (2016-10-18)
 
 Supports AutoValue 1.3
