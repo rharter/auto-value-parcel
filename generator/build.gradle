@@ -1,0 +1,16 @@
+version 'unspecified'
+
+apply plugin: 'java'
+
+sourceCompatibility = JavaVersion.VERSION_1_7
+targetCompatibility = JavaVersion.VERSION_1_7
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'com.squareup:javapoet:1.7.0'
+
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+}

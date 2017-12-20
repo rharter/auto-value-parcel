@@ -10,6 +10,7 @@ dependencies {
     compile 'org.apache.commons:commons-lang3:3.4'
     compileOnly 'com.google.auto.service:auto-service:1.0-rc3'
     compile project(':adapter')
+    compile project(':generator')
 
     testCompile 'junit:junit:4.11'
     testCompile 'com.google.truth:truth:0.27'
