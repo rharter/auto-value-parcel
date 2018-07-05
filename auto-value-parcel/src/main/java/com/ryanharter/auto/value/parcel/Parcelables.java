@@ -165,14 +165,21 @@ final class Parcelables {
               : property.type;
       if (!check.equals(PARCELABLE)) {
         block.add("($T) ", property.type);
+        block.add("in.readParcelable($T.class.getClassLoader())", property.type);
+      } else {
+        throw new AutoValueParcelException();
       }
-      block.add("in.readParcelable($T.class.getClassLoader())", autoValueType);
     } else if (parcelableType.equals(CHARSEQUENCE)) {
       block.add("$T.CHAR_SEQUENCE_CREATOR.createFromParcel(in)", TEXTUTILS);
     } else if (parcelableType.equals(MAP)) {
       block.add("($T) in.readHashMap($T.class.getClassLoader())", property.type, autoValueType);
     } else if (parcelableType.equals(LIST)) {
-      block.add("($T) in.readArrayList($T.class.getClassLoader())", property.type, autoValueType);
+      if (property.type instanceof ParameterizedTypeName) {
+        TypeName paramTypeName = ((ParameterizedTypeName) property.type).typeArguments.get(0);
+        block.add("($T) in.readArrayList($T.class.getClassLoader())", property.type, paramTypeName);
+      } else {
+        throw new AutoValueParcelException();
+      }
     } else if (parcelableType.equals(BOOLEANARRAY)) {
       block.add("in.createBooleanArray()");
     } else if (parcelableType.equals(BYTEARRAY)) {
