@@ -56,6 +56,8 @@ import static javax.lang.model.element.Modifier.STATIC;
 @AutoService(AutoValueExtension.class)
 public final class AutoValueParcelExtension extends AutoValueExtension {
 
+  static final String FAIL_EXPLOSIVELY = "avparcel.failExplosively";
+
   static final class Property {
     final String methodName;
     final String humanName;
@@ -173,7 +175,9 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
         TypeName.get(env.getTypeUtils().erasure(context.autoValueClass().asType()));
 
     ImmutableList<Property> properties = readProperties(context.properties());
-    validateProperties(env, properties);
+    if (!validateProperties(env, properties)) {
+      return null;
+    }
 
     ImmutableMap<TypeMirror, FieldSpec> typeAdapters = getTypeAdapters(properties);
 
@@ -269,7 +273,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     return values.build();
   }
 
-  private void validateProperties(ProcessingEnvironment env, List<Property> properties) {
+  private boolean validateProperties(ProcessingEnvironment env, List<Property> properties) {
     Types typeUtils = env.getTypeUtils();
     for (Property property : properties) {
       if (property.typeAdapter != null) {
@@ -294,9 +298,14 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
           env.getMessager().printMessage(Diagnostic.Kind.ERROR, "AutoValue property " +
               property.methodName + " is not a supported Parcelable type.", property.element);
         }
-        throw new AutoValueParcelException();
+        if (env.getOptions().containsKey(FAIL_EXPLOSIVELY)) {
+          throw new AutoValueParcelException();
+        } else {
+          return false;
+        }
       }
     }
+    return true;
   }
 
   MethodSpec generateConstructor(List<Property> properties) {

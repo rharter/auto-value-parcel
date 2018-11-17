@@ -1,5 +1,6 @@
 package com.ryanharter.auto.value.parcel.util;
 
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
@@ -15,6 +16,7 @@ public final class TestProcessingEnvironment implements ProcessingEnvironment {
   private final Messager messager;
   private final Elements elements;
   private final Types types;
+  private final Map<String, String> options = new LinkedHashMap<>();
 
   public TestProcessingEnvironment(Messager messager, Elements elements, Types types) {
     this.messager = messager;
@@ -22,9 +24,13 @@ public final class TestProcessingEnvironment implements ProcessingEnvironment {
     this.types = types;
   }
 
+  public void setOption(String key, String value) {
+    options.put(key, value);
+  }
+
   @Override
   public Map<String, String> getOptions() {
-    return null;
+    return options;
   }
 
   @Override
