@@ -106,6 +106,11 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
   }
 
   @Override
+  public IncrementalExtensionType incrementalType(ProcessingEnvironment processingEnvironment) {
+    return IncrementalExtensionType.ISOLATING;
+  }
+
+  @Override
   public boolean applicable(Context context) {
     TypeMirror autoValueClass = context.autoValueClass().asType();
     // Disallow manual implementation of the CREATOR instance
