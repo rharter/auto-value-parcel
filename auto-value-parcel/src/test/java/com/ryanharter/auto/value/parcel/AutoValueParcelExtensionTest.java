@@ -38,7 +38,7 @@ public class AutoValueParcelExtensionTest {
   AutoValueParcelExtension extension = new AutoValueParcelExtension();
 
   private Elements elements;
-  private ProcessingEnvironment processingEnvironment;
+  private TestProcessingEnvironment processingEnvironment;
 
   private JavaFileObject parcelable;
   private JavaFileObject parcel;
@@ -960,6 +960,7 @@ public class AutoValueParcelExtensionTest {
   @Test public void throwsForNonParcelableProperty() throws Exception {
     TypeElement type = elements.getTypeElement(SampleTypeWithNonSerializable.class.getCanonicalName());
     AutoValueExtension.Context context = createContext(type);
+    processingEnvironment.setOption(AutoValueParcelExtension.FAIL_EXPLOSIVELY, "true");
 
     try {
       extension.generateClass(context, "Test_AnnotatedType", "SampleTypeWithNonSerializable", true);
