@@ -47,6 +47,7 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 
+import com.google.auto.common.GeneratedAnnotations;
 import static javax.lang.model.element.Modifier.ABSTRACT;
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PRIVATE;
@@ -186,6 +187,14 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
         .addModifiers(FINAL)
         .addMethod(generateConstructor(properties))
         .addMethod(generateWriteToParcel(env, properties, typeAdapters));
+
+    GeneratedAnnotations.generatedAnnotation(env.getElementUtils(), env.getSourceVersion())
+        .map(
+            annotation ->
+                AnnotationSpec.builder(ClassName.get(annotation))
+                    .addMember("value", "$S", getClass().getName())
+                    .build())
+        .ifPresent(subclass::addAnnotation);
 
     if (!typeAdapters.isEmpty()) {
       for (FieldSpec field : typeAdapters.values()) {
