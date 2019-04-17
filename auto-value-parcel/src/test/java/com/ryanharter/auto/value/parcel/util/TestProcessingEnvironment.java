@@ -55,7 +55,7 @@ public final class TestProcessingEnvironment implements ProcessingEnvironment {
 
   @Override
   public SourceVersion getSourceVersion() {
-    return null;
+    return SourceVersion.latest();
   }
 
   @Override
