@@ -373,7 +373,6 @@ final class Parcelables {
   }
 
   static boolean isTypeRequiresSuppressWarnings(TypeName type) {
-    return type.equals(LIST) ||
-            type.equals(MAP);
+    return type instanceof ParameterizedTypeName;
   }
 }
