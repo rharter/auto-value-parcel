@@ -360,7 +360,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
             typeAdapters.get(property.typeAdapter));
       } else {
         final TypeName typeName = Parcelables.getTypeNameFromProperty(property, typeUtils);
-        requiresSuppressWarnings |= Parcelables.isTypeRequiresSuppressWarnings(typeName);
+        requiresSuppressWarnings |= Parcelables.isTypeRequiresSuppressWarnings(property.type);
         Parcelables.readValue(ctorCall, property, typeName, autoValueType);
       }
 
