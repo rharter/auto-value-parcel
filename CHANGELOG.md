@@ -1,5 +1,14 @@
 # Change Log
 
+## Version 0.2.7 (2019-07-25)
+
+Supports: AutoValue 1.6.5
+
+* Add SuppressWarnings for all parameterized types. (#142)
+* Emit @Generated annotations (#139)
+* Shade autocommon and guava dependencies (#135)
+* Update dependencies, fix master, and support incremental processing (#133)
+
 ## Version 0.2.6 (2017-12-06)
 
 Supports: AutoValue 1.5.2
