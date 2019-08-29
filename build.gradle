@@ -1,4 +1,8 @@
-subprojects { project ->
+plugins {
+    id "com.github.ben-manes.versions" version "0.22.0"
+}
+
+subprojects {
     repositories {
         google()
         mavenCentral()
@@ -12,8 +16,6 @@ subprojects { project ->
     }
 }
 
-task wrapper(type: Wrapper) {
-    gradleVersion = '4.10.2'
-    distributionUrl = "https://services.gradle.org/distributions/gradle-$gradleVersion-all.zip"
+tasks.named("wrapper").configure {
+    distributionType = "ALL"
 }
-
