@@ -522,6 +522,9 @@ public class AutoValueParcelExtensionTest {
         "import android.util.SparseArray;\n" +
         "import android.util.SparseBooleanArray;\n" +
         "import com.google.auto.value.AutoValue;\n" +
+        "import com.google.common.collect.ImmutableList;\n" +
+        "import com.google.common.collect.ImmutableSet;\n" +
+        "import com.google.common.collect.ImmutableMap;\n" +
         "import java.io.Serializable;\n" +
         "import java.util.List;\n" +
         "import java.util.Map;\n" +
@@ -558,6 +561,14 @@ public class AutoValueParcelExtensionTest {
         "  @Nullable public abstract Map<String, String> kn();\n" +
         "  public abstract List<String> l();\n" +
         "  @Nullable public abstract List<String> ln();\n" +
+        "  public abstract ImmutableList<String> il();\n" +
+        "  @Nullable public abstract ImmutableList<String> iln();\n" +
+        "  public abstract ImmutableList ilg();\n" +
+        "  @Nullable public abstract ImmutableList ilgn();\n" +
+        "  public abstract ImmutableSet<String> is();\n" +
+        "  @Nullable public abstract ImmutableSet<String> isn();\n" +
+        "  public abstract ImmutableMap<String, Integer> im();\n" +
+        "  @Nullable public abstract ImmutableMap<String, Integer> imn();\n" +
         "  public abstract boolean[] m();\n" +
         "  @Nullable public abstract boolean[] mn();\n" +
         "  public abstract byte[] n();\n" +
@@ -607,6 +618,9 @@ public class AutoValueParcelExtensionTest {
         "import android.util.SizeF;\n" +
         "import android.util.SparseArray;\n" +
         "import android.util.SparseBooleanArray;\n" +
+        "import com.google.common.collect.ImmutableList;\n" +
+        "import com.google.common.collect.ImmutableMap;\n" +
+        "import com.google.common.collect.ImmutableSet;\n" +
         "import java.io.Serializable;\n" +
         "import java.lang.Boolean;\n" +
         "import java.lang.Byte;\n" +
@@ -625,7 +639,7 @@ public class AutoValueParcelExtensionTest {
         "import java.util.Map;\n" +
         "import javax.annotation.Generated;\n" +
         "\n" +
-        "@Generated(\"com.ryanharter.auto.value.parcel.AutoValueParcelExtension\")" +
+        "@Generated(\"com.ryanharter.auto.value.parcel.AutoValueParcelExtension\")\n" +
         "final class AutoValue_Foo extends $AutoValue_Foo {\n" +
         "  public static final Parcelable.Creator<AutoValue_Foo> CREATOR = new Parcelable.Creator<AutoValue_Foo>() {\n" +
         "    @Override\n" +
@@ -663,6 +677,14 @@ public class AutoValueParcelExtensionTest {
         "        (Map<String, String>) in.readHashMap(Foo.class.getClassLoader()),\n" +
         "        (List<String>) in.readArrayList(Foo.class.getClassLoader()),\n" +
         "        (List<String>) in.readArrayList(Foo.class.getClassLoader()),\n" +
+        "        ImmutableList.<String>copyOf(in.readArrayList(String.class.getClassLoader())),\n" +
+        "        in.readInt() == 0 ? ImmutableList.<String>copyOf(in.readArrayList(String.class.getClassLoader())) : null,\n" +
+        "        ImmutableList.copyOf(in.readArrayList(Object.class.getClassLoader())),\n" +
+        "        in.readInt() == 0 ? ImmutableList.copyOf(in.readArrayList(Object.class.getClassLoader())) : null,\n" +
+        "        ImmutableSet.<String>copyOf(in.readArrayList(String.class.getClassLoader())),\n" +
+        "        in.readInt() == 0 ? ImmutableSet.<String>copyOf(in.readArrayList(String.class.getClassLoader())) : null,\n" +
+        "        ImmutableMap.<String, Integer>copyOf(in.readHashMap(String.class.getClassLoader())),\n" +
+        "        in.readInt() == 0 ? ImmutableMap.<String, Integer>copyOf(in.readHashMap(String.class.getClassLoader())) : null,\n" +
         "        in.createBooleanArray(),\n" +
         "        in.readInt() == 0 ? in.createBooleanArray() : null,\n" +
         "        in.createByteArray(),\n" +
@@ -706,8 +728,8 @@ public class AutoValueParcelExtensionTest {
         "    }\n" +
         "  };\n" +
         "\n" +
-        "  AutoValue_Foo(String a, @Nullable String an, byte b, Byte B, @Nullable Byte BN, int c, Integer C, @Nullable Integer CN, short d, Short D, @Nullable Short DN, long e, Long E, @Nullable Long EN, float f, Float F, @Nullable Float FN, double g, Double G, @Nullable Double GN, boolean h, Boolean H, @Nullable Boolean HN, Parcelable i, @Nullable Parcelable in, CharSequence j, @Nullable CharSequence jn, Map<String, String> k, @Nullable Map<String, String> kn, List<String> l, @Nullable List<String> ln, boolean[] m, @Nullable boolean[] mn, byte[] n, @Nullable byte[] nn, int[] s, @Nullable int[] sn, long[] t, @Nullable long[] tn, Serializable u, @Nullable Serializable un, SparseArray w, @Nullable SparseArray wn, SparseBooleanArray x, @Nullable SparseBooleanArray xn, Bundle y, @Nullable Bundle yn, PersistableBundle z, @Nullable PersistableBundle zn, Size aa, @Nullable Size aan, SizeF ab, @Nullable SizeF abn, Parcelable1 ad, @Nullable Parcelable1 adn, FooBinder ae, @Nullable FooBinder aen, char ag, Character ah, @Nullable Character ahn, char[] ai, @Nullable char[] ain, Numbers aj, @Nullable Numbers ajn, Numbers2 ak, @Nullable Numbers2 akn) {\n" +
-        "    super(a, an, b, B, BN, c, C, CN, d, D, DN, e, E, EN, f, F, FN, g, G, GN, h, H, HN, i, in, j, jn, k, kn, l, ln, m, mn, n, nn, s, sn, t, tn, u, un, w, wn, x, xn, y, yn, z, zn, aa, aan, ab, abn, ad, adn, ae, aen, ag, ah, ahn, ai, ain, aj, ajn, ak, akn);\n" +
+        "  AutoValue_Foo(String a, @Nullable String an, byte b, Byte B, @Nullable Byte BN, int c, Integer C, @Nullable Integer CN, short d, Short D, @Nullable Short DN, long e, Long E, @Nullable Long EN, float f, Float F, @Nullable Float FN, double g, Double G, @Nullable Double GN, boolean h, Boolean H, @Nullable Boolean HN, Parcelable i, @Nullable Parcelable in, CharSequence j, @Nullable CharSequence jn, Map<String, String> k, @Nullable Map<String, String> kn, List<String> l, @Nullable List<String> ln, ImmutableList<String> il, @Nullable ImmutableList<String> iln, ImmutableList ilg, @Nullable ImmutableList ilgn, ImmutableSet<String> is, @Nullable ImmutableSet<String> isn, ImmutableMap<String, Integer> im, @Nullable ImmutableMap<String, Integer> imn, boolean[] m, @Nullable boolean[] mn, byte[] n, @Nullable byte[] nn, int[] s, @Nullable int[] sn, long[] t, @Nullable long[] tn, Serializable u, @Nullable Serializable un, SparseArray w, @Nullable SparseArray wn, SparseBooleanArray x, @Nullable SparseBooleanArray xn, Bundle y, @Nullable Bundle yn, PersistableBundle z, @Nullable PersistableBundle zn, Size aa, @Nullable Size aan, SizeF ab, @Nullable SizeF abn, Parcelable1 ad, @Nullable Parcelable1 adn, FooBinder ae, @Nullable FooBinder aen, char ag, Character ah, @Nullable Character ahn, char[] ai, @Nullable char[] ain, Numbers aj, @Nullable Numbers ajn, Numbers2 ak, @Nullable Numbers2 akn) {\n" +
+        "    super(a, an, b, B, BN, c, C, CN, d, D, DN, e, E, EN, f, F, FN, g, G, GN, h, H, HN, i, in, j, jn, k, kn, l, ln, il, iln, ilg, ilgn, is, isn, im, imn, m, mn, n, nn, s, sn, t, tn, u, un, w, wn, x, xn, y, yn, z, zn, aa, aan, ab, abn, ad, adn, ae, aen, ag, ah, ahn, ai, ain, aj, ajn, ak, akn);\n" +
         "  }\n" +
         "\n" +
         "  @Override\n" +
@@ -788,6 +810,34 @@ public class AutoValueParcelExtensionTest {
         "    dest.writeMap(kn());\n" +
         "    dest.writeList(l());\n" +
         "    dest.writeList(ln());\n" +
+        "    dest.writeList(il().asList());\n" +
+        "    if (iln() == null) {\n" +
+        "      dest.writeInt(1);\n" +
+        "    } else {\n" +
+        "      dest.writeInt(0);\n" +
+        "      dest.writeList(iln().asList());\n" +
+        "    }\n" +
+        "    dest.writeList(ilg().asList());\n" +
+        "    if (ilgn() == null) {\n" +
+        "      dest.writeInt(1);\n" +
+        "    } else {\n" +
+        "      dest.writeInt(0);\n" +
+        "      dest.writeList(ilgn().asList());\n" +
+        "    }\n" +
+        "    dest.writeList(is().asList());\n" +
+        "    if (isn() == null) {\n" +
+        "      dest.writeInt(1);\n" +
+        "    } else {\n" +
+        "      dest.writeInt(0);\n" +
+        "      dest.writeList(isn().asList());\n" +
+        "    }\n" +
+        "    dest.writeMap(im());\n" +
+        "    if (imn() == null) {\n" +
+        "      dest.writeInt(1);\n" +
+        "    } else {\n" +
+        "      dest.writeInt(0);\n" +
+        "      dest.writeMap(imn());\n" +
+        "    }\n" +
         "    dest.writeBooleanArray(m());\n" +
         "    if (mn() == null) {\n" +
         "      dest.writeInt(1);\n" +
