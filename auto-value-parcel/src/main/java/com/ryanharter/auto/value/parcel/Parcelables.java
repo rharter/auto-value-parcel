@@ -1,6 +1,7 @@
 package com.ryanharter.auto.value.parcel;
 
 import com.google.common.collect.ImmutableSet;
+import com.ryanharter.auto.value.parcel.AutoValueParcelExtension.Property;
 import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -9,8 +10,10 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeVariableName;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
@@ -25,6 +28,9 @@ final class Parcelables {
   static final TypeName STRING = ClassName.get("java.lang", "String");
   static final TypeName MAP = ClassName.get("java.util", "Map");
   static final TypeName LIST = ClassName.get("java.util", "List");
+  static final TypeName IMMUTABLE_COLLECTION =
+      ClassName.get("com.google.common.collect", "ImmutableCollection");
+  static final TypeName IMMUTABLE_MAP = ClassName.get("com.google.common.collect", "ImmutableMap");
   static final TypeName BOOLEANARRAY = ArrayTypeName.of(boolean.class);
   static final TypeName BYTEARRAY = ArrayTypeName.of(byte.class);
   static final TypeName CHARARRAY = ArrayTypeName.of(char.class);
@@ -43,13 +49,14 @@ final class Parcelables {
   static final TypeName PERSISTABLEBUNDLE = ClassName.get("android.os", "PersistableBundle");
   static final TypeName SIZE = ClassName.get("android.util", "Size");
   static final TypeName SIZEF = ClassName.get("android.util", "SizeF");
+
   static final TypeName TEXTUTILS = ClassName.get("android.text", "TextUtils");
   static final TypeName ENUM = ClassName.get(Enum.class);
 
-  private static final Set<TypeName> VALID_TYPES = ImmutableSet.of(STRING, MAP, LIST, BOOLEANARRAY,
-      BYTEARRAY, CHARARRAY, INTARRAY, LONGARRAY, STRINGARRAY, SPARSEARRAY, SPARSEBOOLEANARRAY,
-      BUNDLE, PARCELABLE, PARCELABLEARRAY, CHARSEQUENCE, IBINDER, OBJECTARRAY,
-      SERIALIZABLE, PERSISTABLEBUNDLE, SIZE, SIZEF);
+  private static final Set<TypeName> VALID_TYPES = ImmutableSet.of(STRING, MAP, LIST,
+      IMMUTABLE_COLLECTION, IMMUTABLE_MAP, BOOLEANARRAY, BYTEARRAY, CHARARRAY, INTARRAY, LONGARRAY,
+      STRINGARRAY, SPARSEARRAY, SPARSEBOOLEANARRAY, BUNDLE, PARCELABLE, PARCELABLEARRAY,
+      CHARSEQUENCE, IBINDER, OBJECTARRAY, SERIALIZABLE, PERSISTABLEBUNDLE, SIZE, SIZEF);
 
   public static boolean isValidType(TypeName typeName) {
     return typeName.isPrimitive() || typeName.isBoxedPrimitive() || VALID_TYPES.contains(typeName);
@@ -134,10 +141,10 @@ final class Parcelables {
     return false;
   }
 
-  static void readValue(CodeBlock.Builder block, AutoValueParcelExtension.Property property,
+  static void readValue(Types typeUtils, CodeBlock.Builder block, Property property,
       final TypeName parcelableType, TypeName autoValueType) {
-    boolean needsNullCheck = needsNullCheck(property, parcelableType);
-    if (needsNullCheck){
+    boolean needsNullCheck = needsNullCheck(typeUtils, property, parcelableType);
+    if (needsNullCheck) {
       block.add("in.readInt() == 0 ? ");
     }
 
@@ -161,14 +168,16 @@ final class Parcelables {
       block.add("in.readInt() == 1");
     } else if (parcelableType.equals(PARCELABLE)) {
       TypeName check = property.type instanceof TypeVariableName
-              ? ((TypeVariableName) property.type).bounds.get(0)
-              : property.type;
+          ? ((TypeVariableName) property.type).bounds.get(0)
+          : property.type;
       if (!check.equals(PARCELABLE)) {
         block.add("($T) ", property.type);
       }
       block.add("in.readParcelable($T.class.getClassLoader())", autoValueType);
     } else if (parcelableType.equals(CHARSEQUENCE)) {
       block.add("$T.CHAR_SEQUENCE_CREATOR.createFromParcel(in)", TEXTUTILS);
+    } else if (isSubclassOf(IMMUTABLE_COLLECTION, typeUtils, property) || isSubclassOf(IMMUTABLE_MAP, typeUtils, property)) {
+      readImmutableCollection(block, property, isSubclassOf(IMMUTABLE_MAP, typeUtils, property));
     } else if (parcelableType.equals(MAP)) {
       block.add("($T) in.readHashMap($T.class.getClassLoader())", property.type, autoValueType);
     } else if (parcelableType.equals(LIST)) {
@@ -200,10 +209,10 @@ final class Parcelables {
         block.add("($T) in.readSerializable()", property.type);
       }
     } else if (parcelableType.equals(PARCELABLEARRAY)) {
-        ArrayTypeName atype = (ArrayTypeName) property.type;
-        if (!atype.componentType.equals(PARCELABLE)) {
-          block.add("($T) ", property.type);
-        }
+      ArrayTypeName atype = (ArrayTypeName) property.type;
+      if (!atype.componentType.equals(PARCELABLE)) {
+        block.add("($T) ", property.type);
+      }
       block.add("in.readParcelableArray($T.class.getClassLoader())", autoValueType);
     } else if (parcelableType.equals(SPARSEARRAY)) {
       block.add("in.readSparseArray($T.class.getClassLoader())", autoValueType);
@@ -223,21 +232,88 @@ final class Parcelables {
       block.add("($T) in.readValue($T.class.getClassLoader())", property.type, autoValueType);
     }
 
-    if (needsNullCheck){
+    if (needsNullCheck) {
       block.add(" : null");
     }
   }
 
   static void readValueWithTypeAdapter(CodeBlock.Builder block, AutoValueParcelExtension.Property property, final FieldSpec adapter) {
-    if (property.nullable()){
+    if (property.nullable()) {
       block.add("in.readInt() == 0 ? ");
     }
 
     block.add("$N.fromParcel(in)", adapter);
 
-    if (property.nullable()){
+    if (property.nullable()) {
       block.add(" : null");
     }
+  }
+
+  private static boolean isSubclassOf(TypeName type, Types typeUtils, Property property) {
+    TypeMirror clazz = property.element.getReturnType();
+
+    while (clazz.getKind() != TypeKind.NONE) {
+      TypeName typeName = TypeName.get(clazz);
+      if (typeName instanceof ParameterizedTypeName) {
+        typeName = ((ParameterizedTypeName) typeName).rawType;
+      }
+      if (type.equals(typeName)) {
+        return true;
+      }
+
+      TypeElement element = ((TypeElement) typeUtils.asElement(clazz));
+      if (element == null) {
+        break;
+      } else {
+        clazz = element.getSuperclass();
+      }
+    }
+
+    return false;
+  }
+
+  private static void readImmutableCollection(CodeBlock.Builder block, Property property,
+      boolean isMap) {
+    DeclaredType collectionType = property.element.getReturnType()
+        .accept(new SimpleTypeVisitor6<DeclaredType, Void>() {
+          @Override
+          public DeclaredType visitDeclared(DeclaredType t, Void v) {
+            return t;
+          }
+        }, null);
+
+    List<TypeName> generics = collectionType.getTypeArguments().stream()
+        .map(TypeName::get)
+        .collect(Collectors.toList());
+
+    List<Object> args = new ArrayList<>();
+    StringBuilder expression = new StringBuilder(collectionType.asElement().getSimpleName() + ".");
+    if (!generics.isEmpty()) {
+      expression.append("<");
+      expression.append("$T");
+      args.add(generics.get(0));
+      for (int i = 1; i < generics.size(); i++) {
+        expression.append(", ");
+        expression.append("$T");
+        args.add(generics.get(i));
+      }
+      expression.append(">");
+    }
+    expression.append("copyOf(in.");
+    if (isMap) {
+      expression.append("readHashMap(");
+    } else {
+      expression.append("readArrayList(");
+    }
+    if (generics.isEmpty()) {
+      expression.append("Object");
+    } else {
+      expression.append("$T");
+      args.add(generics.get(0));
+    }
+    expression.append(".class.getClassLoader()))");
+
+    block.add(expression.toString(), args.toArray());
   }
 
   public static CodeBlock writeValue(Types types, AutoValueParcelExtension.Property property,
@@ -246,7 +322,7 @@ final class Parcelables {
 
     TypeName type = getTypeNameFromProperty(property, types);
 
-    boolean needsNullCheck = needsNullCheck(property, type);
+    boolean needsNullCheck = needsNullCheck(types, property, type);
     if (needsNullCheck) {
       block.beginControlFlow("if ($N() == null)", property.methodName);
       block.addStatement("$N.writeInt(1)", out);
@@ -275,8 +351,10 @@ final class Parcelables {
       block.add("$N.writeParcelable($N(), $N)", out, property.methodName, flags);
     else if (type.equals(CHARSEQUENCE))
       block.add("$T.writeToParcel($N(), $N, $N)", TEXTUTILS, property.methodName, out, flags);
-    else if (type.equals(MAP))
+    else if (type.equals(MAP) || isSubclassOf(IMMUTABLE_MAP, types, property))
       block.add("$N.writeMap($N())", out, property.methodName);
+    else if (isSubclassOf(IMMUTABLE_COLLECTION, types, property))
+      block.add("$N.writeList($N().asList())", out, property.methodName);
     else if (type.equals(LIST))
       block.add("$N.writeList($N())", out, property.methodName);
     else if (type.equals(BOOLEANARRAY))
@@ -325,10 +403,10 @@ final class Parcelables {
     return block.build();
   }
 
-  private static boolean needsNullCheck(AutoValueParcelExtension.Property property, TypeName type) {
+  private static boolean needsNullCheck(Types types, AutoValueParcelExtension.Property property, TypeName type) {
     return property.nullable()
         && !type.equals(BUNDLE)
-        && !type.equals(LIST)
+        && (!type.equals(LIST) || isSubclassOf(IMMUTABLE_COLLECTION, types, property))
         && !type.equals(MAP)
         && !type.equals(PARCELABLE)
         && !type.equals(PERSISTABLEBUNDLE)

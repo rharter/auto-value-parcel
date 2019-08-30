@@ -361,7 +361,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
       } else {
         final TypeName typeName = Parcelables.getTypeNameFromProperty(property, typeUtils);
         requiresSuppressWarnings |= Parcelables.isTypeRequiresSuppressWarnings(property.type);
-        Parcelables.readValue(ctorCall, property, typeName, autoValueType);
+        Parcelables.readValue(typeUtils, ctorCall, property, typeName, autoValueType);
       }
 
       if (i < n - 1) ctorCall.add(",");
