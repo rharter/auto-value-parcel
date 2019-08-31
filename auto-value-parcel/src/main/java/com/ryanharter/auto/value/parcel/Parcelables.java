@@ -29,8 +29,9 @@ final class Parcelables {
   static final TypeName MAP = ClassName.get("java.util", "Map");
   static final TypeName LIST = ClassName.get("java.util", "List");
   static final TypeName IMMUTABLE_COLLECTION =
-      ClassName.get("com.google.common.collect", "ImmutableCollection");
-  static final TypeName IMMUTABLE_MAP = ClassName.get("com.google.common.collect", "ImmutableMap");
+      ClassName.get(getUnoptimizedGuavaCollectPackage(), "ImmutableCollection");
+  static final TypeName IMMUTABLE_MAP = ClassName
+      .get(getUnoptimizedGuavaCollectPackage(), "ImmutableMap");
   static final TypeName BOOLEANARRAY = ArrayTypeName.of(boolean.class);
   static final TypeName BYTEARRAY = ArrayTypeName.of(byte.class);
   static final TypeName CHARARRAY = ArrayTypeName.of(char.class);
@@ -57,6 +58,16 @@ final class Parcelables {
       IMMUTABLE_COLLECTION, IMMUTABLE_MAP, BOOLEANARRAY, BYTEARRAY, CHARARRAY, INTARRAY, LONGARRAY,
       STRINGARRAY, SPARSEARRAY, SPARSEBOOLEANARRAY, BUNDLE, PARCELABLE, PARCELABLEARRAY,
       CHARSEQUENCE, IBINDER, OBJECTARRAY, SERIALIZABLE, PERSISTABLEBUNDLE, SIZE, SIZEF);
+
+  /**
+   * The shadow jar plugin does a find/replace for any guava package name. This breaks users since
+   * they aren't using the autovaluemoshi package. As a hack to get around this, we add some extra
+   * code just to generate the string "com" so it can't be optimized into a compile-time constant
+   * and won't be caught by the shadow jar plugin.
+   */
+  private static String getUnoptimizedGuavaCollectPackage() {
+    return "com".concat(".google.common.collect");
+  }
 
   public static boolean isValidType(TypeName typeName) {
     return typeName.isPrimitive() || typeName.isBoxedPrimitive() || VALID_TYPES.contains(typeName);
