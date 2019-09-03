@@ -16,9 +16,9 @@ shadowJar {
     minimize()
     classifier = ''
     configurations = [shadedConfig]
-    relocate 'com.google.auto.common', 'autovaluemoshi.shaded.com.google.auto.common'
-    relocate 'com.google.common', 'autovaluemoshi.shaded.com.google.common'
-    relocate 'com.google.thirdparty', 'autovaluemoshi.shaded.com.google.thirdparty'
+    relocate 'com.google.auto.common', 'autovalueparcel.shaded.com.google.auto.common'
+    relocate 'com.google.common', 'autovalueparcel.shaded.com.google.common'
+    relocate 'com.google.thirdparty', 'autovalueparcel.shaded.com.google.thirdparty'
     exclude 'afu/**'
     exclude 'org/**'
     exclude 'com/google/errorprone/annotations/**'
@@ -39,8 +39,8 @@ dependencies {
     annotationProcessor 'com.google.auto.service:auto-service:1.0-rc6'
     compileOnly 'com.google.auto.service:auto-service:1.0-rc6'
 
-    api 'com.google.auto.value:auto-value:1.6.6'
-
+    implementation 'com.google.auto.value:auto-value:1.6.6'
+    implementation 'com.google.auto.value:auto-value-annotations:1.6.6'
     compileShaded 'com.google.auto:auto-common:0.10'
     compileShaded 'com.google.guava:guava:28.1-jre'
     implementation 'com.squareup:javapoet:1.11.1'
