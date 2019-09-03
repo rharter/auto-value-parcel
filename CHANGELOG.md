@@ -1,5 +1,12 @@
 # Change Log
 
+## Version 0.2.8 (2019-09-03)
+
+Suppors: AutoValue 1.6.6
+
+* Support immutable collections (#145)
+* Fixes misnamed shadow configuration. (#143)
+
 ## Version 0.2.7 (2019-07-25)
 
 Supports: AutoValue 1.6.5
