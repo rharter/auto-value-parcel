@@ -63,16 +63,18 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     final String methodName;
     final String humanName;
     final ExecutableElement element;
+    final TypeMirror typeMirror;
     final TypeName type;
     final ImmutableSet<String> annotations;
     final boolean nullable;
     TypeMirror typeAdapter;
 
-    public Property(String humanName, ExecutableElement element) {
+    public Property(String humanName, ExecutableElement element, TypeMirror actualType) {
       this.methodName = element.getSimpleName().toString();
       this.humanName = humanName;
       this.element = element;
-      type = TypeName.get(element.getReturnType());
+      typeMirror = actualType;
+      type = TypeName.get(actualType);
       annotations = buildAnnotations(element);
       nullable = nullableAnnotation() != null;
 
@@ -175,7 +177,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     TypeName autoValueType =
         TypeName.get(env.getTypeUtils().erasure(context.autoValueClass().asType()));
 
-    ImmutableList<Property> properties = readProperties(context.properties());
+    ImmutableList<Property> properties = readProperties(context);
     if (!validateProperties(env, properties)) {
       return null;
     }
@@ -274,10 +276,11 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     return null;
   }
 
-  private ImmutableList<Property> readProperties(Map<String, ExecutableElement> properties) {
+  private ImmutableList<Property> readProperties(Context context) {
     ImmutableList.Builder<Property> values = ImmutableList.builder();
-    for (Map.Entry<String, ExecutableElement> entry : properties.entrySet()) {
-      values.add(new Property(entry.getKey(), entry.getValue()));
+    for (Map.Entry<String, ExecutableElement> entry : context.properties().entrySet()) {
+      String name = entry.getKey();
+      values.add(new Property(name, entry.getValue(), context.propertyTypes().get(name)));
     }
     return values.build();
   }
@@ -288,7 +291,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
       if (property.typeAdapter != null) {
         continue;
       }
-      TypeMirror type = property.element.getReturnType();
+      TypeMirror type = property.typeMirror;
       if (type.getKind() == TypeKind.ARRAY) {
         ArrayType aType = (ArrayType) type;
         type = aType.getComponentType();
