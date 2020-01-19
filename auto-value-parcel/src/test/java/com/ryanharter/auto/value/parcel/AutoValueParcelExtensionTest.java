@@ -6,6 +6,7 @@ import com.google.auto.value.extension.AutoValueExtension;
 import com.google.auto.value.processor.AutoValueProcessor;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.google.testing.compile.CompilationRule;
 import com.google.testing.compile.JavaFileObjects;
 import com.ryanharter.auto.value.parcel.util.TestMessager;
@@ -21,6 +22,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.tools.JavaFileObject;
 import org.junit.Before;
@@ -2169,6 +2171,10 @@ public class AutoValueParcelExtensionTest {
 
     @Override public Set<ExecutableElement> abstractMethods() {
       return Collections.emptySet();
+    }
+
+    @Override public Map<String, TypeMirror> propertyTypes() {
+      return Maps.transformValues(properties, ExecutableElement::getReturnType);
     }
   }
 
