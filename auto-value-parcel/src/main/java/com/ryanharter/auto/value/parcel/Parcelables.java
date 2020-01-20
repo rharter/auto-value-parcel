@@ -261,7 +261,7 @@ final class Parcelables {
   }
 
   private static boolean isSubclassOf(TypeName type, Types typeUtils, Property property) {
-    TypeMirror clazz = property.element.getReturnType();
+    TypeMirror clazz = property.typeMirror;
 
     while (clazz.getKind() != TypeKind.NONE) {
       TypeName typeName = TypeName.get(clazz);
@@ -285,7 +285,7 @@ final class Parcelables {
 
   private static void readImmutableCollection(CodeBlock.Builder block, Property property,
       boolean isMap) {
-    DeclaredType collectionType = property.element.getReturnType()
+    DeclaredType collectionType = property.typeMirror
         .accept(new SimpleTypeVisitor6<DeclaredType, Void>() {
           @Override
           public DeclaredType visitDeclared(DeclaredType t, Void v) {
@@ -327,8 +327,12 @@ final class Parcelables {
     block.add(expression.toString(), args.toArray());
   }
 
-  public static CodeBlock writeValue(Types types, AutoValueParcelExtension.Property property,
-      ParameterSpec out, ParameterSpec flags) {
+  public static CodeBlock writeValue(
+      Types types,
+      AutoValueParcelExtension.Property property,
+      ParameterSpec out,
+      ParameterSpec flags
+  ) {
     CodeBlock.Builder block = CodeBlock.builder();
 
     TypeName type = getTypeNameFromProperty(property, types);
@@ -445,7 +449,7 @@ final class Parcelables {
   }
 
   static TypeName getTypeNameFromProperty(AutoValueParcelExtension.Property property, Types types) {
-    TypeMirror returnType = property.element.getReturnType();
+    TypeMirror returnType = property.typeMirror;
     if (returnType.getKind() == TypeKind.TYPEVAR) {
       TypeVariable vType = (TypeVariable) returnType;
       returnType = vType.getUpperBound();

@@ -4,7 +4,9 @@ import android.os.Parcelable;
 import com.google.auto.common.MoreElements;
 import com.google.auto.value.extension.AutoValueExtension;
 import com.google.auto.value.processor.AutoValueProcessor;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.google.testing.compile.CompilationRule;
 import com.google.testing.compile.JavaFileObjects;
 import com.ryanharter.auto.value.parcel.util.TestMessager;
@@ -20,6 +22,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.tools.JavaFileObject;
 import org.junit.Before;
@@ -214,7 +217,7 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
         .that(Arrays.asList(parcel, parcelable, nullable, source))
-        .processedWith(new AutoValueProcessor())
+        .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
         .compilesWithoutError()
         .and()
         .generatesSources(expected);
@@ -278,7 +281,7 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
         .that(Arrays.asList(parcel, parcelable, nullable, source1, source2))
-        .processedWith(new AutoValueProcessor())
+        .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
         .compilesWithoutError()
         .and()
         .generatesSources(expected);
@@ -304,7 +307,7 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
         .that(Arrays.asList(parcel, parcelable, source))
-        .processedWith(new AutoValueProcessor())
+        .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
         .compilesWithoutError();
   }
 
@@ -407,7 +410,7 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
         .that(Arrays.asList(parcel, parcelable, notMatching, matching))
-        .processedWith(new AutoValueProcessor())
+        .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
         .compilesWithoutError()
         .and()
         .generatesSources(expectedNotMatching, expectedMatching);
@@ -429,7 +432,7 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
         .that(Arrays.asList(parcel, parcelable, source))
-        .processedWith(new AutoValueProcessor())
+        .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
         .failsToCompile()
         .withErrorContaining("Manual implementation of Parcelable#writeToParcel(Parcel,int) found when "
                              + "processing test.Test. Remove this so auto-value-parcel can automatically "
@@ -459,7 +462,7 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
         .that(Arrays.asList(parcel, parcelable, source))
-        .processedWith(new AutoValueProcessor())
+        .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
         .failsToCompile()
         .withErrorContaining("Manual implementation of a static Parcelable.Creator<T> CREATOR field "
                              + "found when processing test.Test. Remove this so auto-value-parcel can "
@@ -938,7 +941,7 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
         .that(Arrays.asList(nullable, parcel, parcelable, textUtils, parcelable1, foobinder, numbersEnum, parcelableEnum, source))
-        .processedWith(new AutoValueProcessor())
+        .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
         .compilesWithoutError()
         .and()
         .generatesSources(expected);
@@ -1013,7 +1016,7 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
         .that(Arrays.asList(parcel, parcelable, nullable, source))
-        .processedWith(new AutoValueProcessor())
+        .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
         .compilesWithoutError()
         .and()
         .generatesSources(expected);
@@ -1051,7 +1054,7 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
         .that(Arrays.asList(parcelable, parcel, source))
-        .processedWith(new AutoValueProcessor())
+        .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
         .failsToCompile()
         .withErrorContaining("Maps can only have String objects for keys and valid Parcelable"
             + " types for values.");
@@ -1142,7 +1145,7 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
         .that(Arrays.asList(parcel, parcelable, bar, barAdapter, foo))
-        .processedWith(new AutoValueProcessor())
+        .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
         .compilesWithoutError()
         .and()
         .generatesSources(expected);
@@ -1206,7 +1209,7 @@ public class AutoValueParcelExtensionTest {
         + "}");
     assertAbout(javaSources())
         .that(Arrays.asList(parcelable, parcel, source))
-        .processedWith(new AutoValueProcessor())
+        .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
         .compilesWithoutError()
         .and()
         .generatesSources(expected);
@@ -1323,7 +1326,7 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
         .that(Arrays.asList(parcel, parcelable, bar, baz, foo))
-        .processedWith(new AutoValueProcessor())
+        .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
         .compilesWithoutError()
         .and()
         .generatesSources(expected);
@@ -1419,7 +1422,7 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
         .that(Arrays.asList(nullable, parcel, parcelable, bar, barAdapter, foo))
-        .processedWith(new AutoValueProcessor())
+        .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
         .compilesWithoutError()
         .and()
         .generatesSources(expected);
@@ -1487,7 +1490,7 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
         .that(Arrays.asList(parcelable, parcel, source1, source2, source3))
-        .processedWith(new AutoValueProcessor())
+        .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
         .compilesWithoutError()
         .and()
         .generatesSources(expected);
@@ -1548,7 +1551,7 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
             .that(Arrays.asList(parcel, parcelable, source))
-            .processedWith(new AutoValueProcessor())
+            .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
             .compilesWithoutError()
             .and()
             .generatesSources(expected);
@@ -1609,7 +1612,7 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
             .that(Arrays.asList(parcel, parcelable, source))
-            .processedWith(new AutoValueProcessor())
+            .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
             .compilesWithoutError()
             .and()
             .generatesSources(expected);
@@ -1669,7 +1672,7 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
             .that(Arrays.asList(parcel, parcelable, source))
-            .processedWith(new AutoValueProcessor())
+            .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
             .compilesWithoutError()
             .and()
             .generatesSources(expected);
@@ -1793,7 +1796,7 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
             .that(Arrays.asList(parcel, parcelable, textUtils, source))
-            .processedWith(new AutoValueProcessor())
+            .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
             .compilesWithoutError()
             .and()
             .generatesSources(expected);
@@ -1851,7 +1854,7 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
             .that(Arrays.asList(parcel, parcelable, source))
-            .processedWith(new AutoValueProcessor())
+            .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
             .compilesWithoutError()
             .and()
             .generatesSources(expected);
@@ -1916,7 +1919,7 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
             .that(Arrays.asList(parcel, parcelable, source))
-            .processedWith(new AutoValueProcessor())
+            .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
             .compilesWithoutError()
             .and()
             .generatesSources(expected);
@@ -1981,7 +1984,7 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
         .that(Arrays.asList(parcel, parcelable, source))
-        .processedWith(new AutoValueProcessor())
+        .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
         .compilesWithoutError()
         .and()
         .generatesSources(expected);
@@ -2000,10 +2003,127 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
             .that(Arrays.asList(parcel, parcelable, source))
-            .processedWith(new AutoValueProcessor())
+            .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
             .failsToCompile()
             .withErrorContaining("AutoValue property tea is not a supported Parcelable type.")
             .in(source).onLine(5);
+  }
+
+  @Test
+  public void useResolvedTypesInGenerics() {
+    JavaFileObject foo = JavaFileObjects.forSourceString("test.Foo", ""
+            + "package test;\n"
+            + "interface Foo {}\n"
+    );
+
+    JavaFileObject bar = JavaFileObjects.forSourceString("test.Bar", ""
+            + "package test;\n"
+            + "\n"
+            + "interface Bar<F extends Foo> {\n"
+            + "  F foo();\n"
+            + "}\n"
+    );
+
+    JavaFileObject pfoo = JavaFileObjects.forSourceString("test.PFoo", ""
+            + "package test;\n"
+            + "\n"
+            + "import android.os.Parcelable;"
+            + "import com.google.auto.value.AutoValue;"
+            + "\n"
+            + "@AutoValue abstract class PFoo implements Foo, Parcelable {}\n"
+    );
+
+    JavaFileObject pbar = JavaFileObjects.forSourceString("test.PBar", ""
+            + "package test;\n"
+            + "\n"
+            + "import android.os.Parcelable;"
+            + "import com.google.auto.value.AutoValue;"
+            + "\n"
+            + "@AutoValue abstract class PBar implements Bar<PFoo>, Parcelable {}\n"
+    );
+
+    JavaFileObject expectedPFoo = JavaFileObjects.forSourceString("test.AutoValue_PFoo", "package"
+        + " test;\n"
+        + "\n"
+        + "import android.os.Parcel;\n"
+        + "import android.os.Parcelable;\n"
+        + "import java.lang.Override;\n"
+        + "import javax.annotation.Generated;\n"
+        + "\n"
+        + "@Generated(\"com.ryanharter.auto.value.parcel.AutoValueParcelExtension\")\n"
+        + "final class AutoValue_PFoo extends $AutoValue_PFoo {\n"
+        + "  public static final Parcelable.Creator<AutoValue_PFoo> CREATOR = new Parcelable.Creator<AutoValue_PFoo>() {\n"
+        + "    @Override\n"
+        + "    public AutoValue_PFoo createFromParcel(Parcel in) {\n"
+        + "      return new AutoValue_PFoo(\n"
+        + "      );\n"
+        + "    }\n"
+        + "    @Override\n"
+        + "    public AutoValue_PFoo[] newArray(int size) {\n"
+        + "      return new AutoValue_PFoo[size];\n"
+        + "    }\n"
+        + "  };\n"
+        + "\n"
+        + "  AutoValue_PFoo() {\n"
+        + "    super();\n"
+        + "  }\n"
+        + "\n"
+        + "  @Override\n"
+        + "  public void writeToParcel(Parcel dest, int flags) {\n"
+        + "  }\n"
+        + "\n"
+        + "  @Override\n"
+        + "  public int describeContents() {\n"
+        + "    return 0;\n"
+        + "  }\n"
+        + "}"
+    );
+
+    JavaFileObject expectedPBar = JavaFileObjects.forSourceString("test.AutoValue_PBar", "package"
+        + " test;\n"
+        + "\n"
+        + "import android.os.Parcel;\n"
+        + "import android.os.Parcelable;\n"
+        + "import java.lang.Override;\n"
+        + "import javax.annotation.Generated;\n"
+        + "\n"
+        + "@Generated(\"com.ryanharter.auto.value.parcel.AutoValueParcelExtension\")\n"
+        + "final class AutoValue_PBar extends $AutoValue_PBar {\n"
+        + "  public static final Parcelable.Creator<AutoValue_PBar> CREATOR = new Parcelable.Creator<AutoValue_PBar>() {\n"
+        + "    @Override\n"
+        + "    public AutoValue_PBar createFromParcel(Parcel in) {\n"
+        + "      return new AutoValue_PBar(\n"
+        + "          (PFoo) in.readParcelable(PBar.class.getClassLoader())\n"
+        + "      );\n"
+        + "    }\n"
+        + "    @Override\n"
+        + "    public AutoValue_PBar[] newArray(int size) {\n"
+        + "      return new AutoValue_PBar[size];\n"
+        + "    }\n"
+        + "  };\n"
+        + "\n"
+        + "  AutoValue_PBar(PFoo foo) {\n"
+        + "    super(foo);\n"
+        + "  }\n"
+        + "\n"
+        + "  @Override\n"
+        + "  public void writeToParcel(Parcel dest, int flags) {\n"
+        + "    dest.writeParcelable(foo(), flags);\n"
+        + "  }\n"
+        + "\n"
+        + "  @Override\n"
+        + "  public int describeContents() {\n"
+        + "    return 0;\n"
+        + "  }\n"
+        + "}\n"
+    );
+
+    assertAbout(javaSources())
+        .that(ImmutableList.of(parcel, parcelable, foo, bar, pfoo, pbar))
+        .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expectedPFoo, expectedPBar);
   }
 
   private AutoValueExtension.Context createContext(TypeElement type) {
@@ -2051,6 +2171,10 @@ public class AutoValueParcelExtensionTest {
 
     @Override public Set<ExecutableElement> abstractMethods() {
       return Collections.emptySet();
+    }
+
+    @Override public Map<String, TypeMirror> propertyTypes() {
+      return Maps.transformValues(properties, ExecutableElement::getReturnType);
     }
   }
 
