@@ -46,6 +46,7 @@ public class AutoValueParcelExtensionTest {
   private JavaFileObject parcelable;
   private JavaFileObject parcel;
   private JavaFileObject nullable;
+  private JavaFileObject nullableTypeAnnotation;
   private JavaFileObject textUtils;
 
   @Before public void setup() {
@@ -136,6 +137,17 @@ public class AutoValueParcelExtensionTest {
         + "@Target({METHOD, PARAMETER, FIELD})\n"
         + "public @interface Nullable {\n"
         + "}");
+    nullableTypeAnnotation = JavaFileObjects.forSourceString("com.ryanharter.auto.value.moshi.typeannotation.Nullable", ""
+        + "package test;\n"
+        + "import java.lang.annotation.Retention;\n"
+        + "import java.lang.annotation.Target;\n"
+        + "import static java.lang.annotation.ElementType.TYPE_PARAMETER;\n"
+        + "import static java.lang.annotation.ElementType.TYPE_USE;\n"
+        + "import static java.lang.annotation.RetentionPolicy.SOURCE;\n"
+        + "@Retention(SOURCE)\n"
+        + "@Target({TYPE_USE, TYPE_PARAMETER})\n"
+        + "public @interface Nullable {\n"
+        + "}");
     textUtils = JavaFileObjects.forSourceString("android.text.TextUtils", ""
         + "package android.text;\n"
         + "import android.os.Parcel;\n"
@@ -217,6 +229,69 @@ public class AutoValueParcelExtensionTest {
 
     assertAbout(javaSources())
         .that(Arrays.asList(parcel, parcelable, nullable, source))
+        .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
+  @Test public void nullableTypeAnnotation() {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Test", ""
+        + "package test;\n"
+        + "import android.os.Parcelable;\n"
+        + "import com.google.auto.value.AutoValue;\n"
+        + "@AutoValue public abstract class Test implements Parcelable {\n"
+        + "public abstract @Nullable Double a();\n"
+        + "}"
+    );
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test/AutoValue_Test", ""
+        + "package test;\n" +
+        "\n" +
+        "import android.os.Parcel;\n" +
+        "import android.os.Parcelable;\n" +
+        "import java.lang.Double;\n" +
+        "import java.lang.Override;\n" +
+        "import javax.annotation.Generated;\n" +
+        "\n" +
+        "@Generated(\"com.ryanharter.auto.value.parcel.AutoValueParcelExtension\")" +
+        "final class AutoValue_Test extends $AutoValue_Test {\n" +
+        "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = new Parcelable.Creator<AutoValue_Test>() {\n" +
+        "\n" +
+        "    @Override\n" +
+        "    public AutoValue_Test createFromParcel(Parcel in) {\n" +
+        "      return new AutoValue_Test(\n" +
+        "          in.readInt() == 0 ? in.readDouble() : null\n" +
+        "      );\n" +
+        "    }\n" +
+        "    @Override\n" +
+        "    public AutoValue_Test[] newArray(int size) {\n" +
+        "      return new AutoValue_Test[size];\n" +
+        "    }\n" +
+        "  };\n" +
+        "\n" +
+        "  AutoValue_Test(@Nullable Double a) {\n" +
+        "    super(a);\n" +
+        "  }\n" +
+        "\n" +
+        "  @Override\n" +
+        "  public void writeToParcel(Parcel dest, int flags) {\n" +
+        "    if (a() == null) {\n" +
+        "      dest.writeInt(1);\n" +
+        "    } else {\n" +
+        "      dest.writeInt(0);\n" +
+        "      dest.writeDouble(a());\n" +
+        "    }\n" +
+        "  }\n" +
+        "\n" +
+        "  @Override\n" +
+        "  public int describeContents() {\n" +
+        "    return 0;\n" +
+        "  }\n" +
+        "}");
+
+    assertAbout(javaSources())
+        .that(Arrays.asList(parcel, parcelable, nullableTypeAnnotation, source))
         .processedWith(new AutoValueProcessor(ImmutableList.of(new AutoValueParcelExtension())))
         .compilesWithoutError()
         .and()

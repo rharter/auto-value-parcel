@@ -65,7 +65,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     final ExecutableElement element;
     final TypeMirror typeMirror;
     final TypeName type;
-    final ImmutableSet<String> annotations;
+    final ImmutableList<AnnotationMirror> annotations;
     final boolean nullable;
     TypeMirror typeAdapter;
 
@@ -74,9 +74,9 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
       this.humanName = humanName;
       this.element = element;
       typeMirror = actualType;
-      type = TypeName.get(actualType);
+      type = resolveTypeName(actualType);
       annotations = buildAnnotations(element);
-      nullable = nullableAnnotation() != null;
+      nullable = hasTypeNullableAnnotation(actualType) || nonTypeNullableAnnotation() != null;
 
       ParcelAdapter parcelAdapter = element.getAnnotation(ParcelAdapter.class);
       if (parcelAdapter != null) {
@@ -92,21 +92,45 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
       return nullable;
     }
 
-    public String nullableAnnotation() {
-      for (String annotationString : annotations) {
-        if (annotationString.equals("@Nullable") || annotationString.endsWith(".Nullable")) {
-          return annotationString;
+    public AnnotationMirror nonTypeNullableAnnotation() {
+      for (AnnotationMirror annotation : annotations) {
+        if (isNullableAnnotation(annotation)) {
+          return annotation;
         }
       }
       return null;
     }
 
-    private ImmutableSet<String> buildAnnotations(ExecutableElement element) {
-      ImmutableSet.Builder<String> builder = ImmutableSet.builder();
+    private boolean hasTypeNullableAnnotation(TypeMirror actualType) {
+      for (AnnotationMirror annotation : actualType.getAnnotationMirrors()) {
+        if (isNullableAnnotation(annotation)) {
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    private boolean isNullableAnnotation(AnnotationMirror annotation) {
+      return annotation.getAnnotationType().asElement().getSimpleName().contentEquals("Nullable");
+    }
+
+    private ImmutableList<AnnotationMirror> buildAnnotations(ExecutableElement element) {
+      ImmutableList.Builder<AnnotationMirror> builder = ImmutableList.builder();
       for (AnnotationMirror annotation : element.getAnnotationMirrors()) {
-        builder.add(annotation.getAnnotationType().asElement().toString());
+        builder.add(annotation);
       }
       return builder.build();
+    }
+
+    private TypeName resolveTypeName(TypeMirror actualType) {
+      TypeName typeName = TypeName.get(actualType);
+      ImmutableList.Builder<AnnotationSpec> typeAnnotations = ImmutableList.builder();
+      for (AnnotationMirror annotation : actualType.getAnnotationMirrors()) {
+        typeAnnotations.add(AnnotationSpec.get(annotation));
+      }
+
+      return typeName.annotated(typeAnnotations.build());
     }
   }
 
@@ -324,8 +348,9 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
     List<ParameterSpec> params = Lists.newArrayListWithCapacity(properties.size());
     for (Property property : properties) {
       ParameterSpec.Builder builder = ParameterSpec.builder(property.type, property.humanName);
-      if (property.nullable()) {
-        builder.addAnnotation(ClassName.bestGuess(property.nullableAnnotation()));
+	  AnnotationMirror nonTypeNullableAnnotation = property.nonTypeNullableAnnotation();
+      if (nonTypeNullableAnnotation != null) {
+        builder.addAnnotation(ClassName.bestGuess(nonTypeNullableAnnotation.getAnnotationType().toString()));
       }
       params.add(builder.build());
     }
