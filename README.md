@@ -52,7 +52,7 @@ Since TypeAdapters require a small runtime component, they are optional.  To use
 your project you'll have to add a compile dependency on the `auto-value-parcel-adapter` artifact.
 
 ```groovy
-compile 'com.ryanharter.auto.value:auto-value-parcel-adapter:0.2.7'
+compile 'com.ryanharter.auto.value:auto-value-parcel-adapter:0.2.9'
 ```
 
 ## Download
@@ -60,10 +60,10 @@ compile 'com.ryanharter.auto.value:auto-value-parcel-adapter:0.2.7'
 Add a Gradle dependency:
 
 ```groovy
-annotationProcessor 'com.ryanharter.auto.value:auto-value-parcel:0.2.7'
+annotationProcessor 'com.ryanharter.auto.value:auto-value-parcel:0.2.9'
 
 // Optionally for TypeAdapter support
-compile 'com.ryanharter.auto.value:auto-value-parcel-adapter:0.2.7'
+compile 'com.ryanharter.auto.value:auto-value-parcel-adapter:0.2.9'
 ```
 
 ([Migrating](https://bitbucket.org/hvisser/android-apt/wiki/Migration) from `apt` to `annotationProcessor`)

@@ -1,5 +1,12 @@
 # Change Log
 
+## Version 0.2.9 (2021-06-08)
+
+Supports: AutoValue 1.7
+
+* Support type @Nullable annotations. (#156)
+* Resolve final types for properties of generic supercclasses (#150)
+
 ## Version 0.2.8 (2019-09-03)
 
 Supports: AutoValue 1.6.6
