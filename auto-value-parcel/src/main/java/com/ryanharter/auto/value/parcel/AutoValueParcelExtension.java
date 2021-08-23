@@ -1,10 +1,13 @@
 package com.ryanharter.auto.value.parcel;
 
+import com.google.auto.common.AnnotationMirrors;
+import com.google.auto.common.AnnotationValues;
 import com.google.auto.common.MoreElements;
 import com.google.auto.common.MoreTypes;
 import com.google.auto.service.AutoService;
 import com.google.auto.value.extension.AutoValueExtension;
 import com.google.common.base.CaseFormat;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -31,6 +34,7 @@ import java.util.Set;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -58,6 +62,7 @@ import static javax.lang.model.element.Modifier.STATIC;
 public final class AutoValueParcelExtension extends AutoValueExtension {
 
   static final String FAIL_EXPLOSIVELY = "avparcel.failExplosively";
+  private static final String PARCEL_ADAPTER = "com.ryanharter.auto.value.parcel.ParcelAdapter";
 
   static final class Property {
     final String methodName;
@@ -78,13 +83,10 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
       annotations = buildAnnotations(element);
       nullable = hasTypeNullableAnnotation(actualType) || nonTypeNullableAnnotation() != null;
 
-      ParcelAdapter parcelAdapter = element.getAnnotation(ParcelAdapter.class);
-      if (parcelAdapter != null) {
-        try {
-          parcelAdapter.value();
-        } catch (MirroredTypeException e) {
-          typeAdapter = e.getTypeMirror();
-        }
+      Optional<AnnotationMirror> parcelAdapter = MoreElements.getAnnotationMirror(element, PARCEL_ADAPTER);
+      if (parcelAdapter.isPresent()) {
+        AnnotationValue value = AnnotationMirrors.getAnnotationValue(parcelAdapter.get(), "value");
+        typeAdapter = AnnotationValues.getTypeMirror(value);
       }
     }
 
