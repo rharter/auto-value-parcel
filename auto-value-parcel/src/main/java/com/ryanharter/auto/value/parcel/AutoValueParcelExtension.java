@@ -210,7 +210,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
 
     ImmutableMap<TypeMirror, FieldSpec> typeAdapters = getTypeAdapters(properties);
 
-    TypeName type = ClassName.get(context.packageName(), className);
+    ClassName type = ClassName.get(context.packageName(), className);
     TypeSpec.Builder subclass = TypeSpec.classBuilder(className)
         .addModifiers(FINAL)
         .addMethod(generateConstructor(properties))
@@ -230,7 +230,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
       }
     }
 
-    List<? extends javax.lang.model.element.TypeParameterElement> typeParameters =
+    List<? extends TypeParameterElement> typeParameters =
         context.autoValueClass().getTypeParameters();
     subclass.addField(generateCreator(env, autoValueType, properties, type, typeAdapters, typeParameters));
 
@@ -376,8 +376,8 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
   }
 
   FieldSpec generateCreator(ProcessingEnvironment env, TypeName autoValueType,
-      List<Property> properties, TypeName type, Map<TypeMirror, FieldSpec> typeAdapters,
-      List<? extends javax.lang.model.element.TypeParameterElement> typeParameters) {
+      List<Property> properties, ClassName type, Map<TypeMirror, FieldSpec> typeAdapters,
+      List<? extends TypeParameterElement> typeParameters) {
 
     ClassName creator = ClassName.bestGuess("android.os.Parcelable.Creator");
     TypeName typeWithParameters;
@@ -390,7 +390,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
                 return WildcardTypeName.subtypeOf(typeName);
               }
       ).toArray(TypeName[]::new);
-     typeWithParameters = ParameterizedTypeName.get((ClassName) type, elements);
+     typeWithParameters = ParameterizedTypeName.get(type, elements);
     } else {
       typeWithParameters = type;
     }
