@@ -10,6 +10,7 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeVariableName;
+import com.squareup.javapoet.WildcardTypeName;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -152,6 +153,27 @@ final class Parcelables {
     return false;
   }
 
+  private static void addTypecast(CodeBlock.Builder block, Property property){
+    TypeName typeToCastTo = property.type instanceof TypeVariableName
+            ? ((TypeVariableName) property.type).bounds.get(0)
+            : property.type;
+    if (property.type instanceof ParameterizedTypeName) {
+      ParameterizedTypeName param = (ParameterizedTypeName) property.type;
+      TypeName[] wildcardTypes = param.typeArguments.stream()
+              .map(typeArgument -> {
+                // TODO: support types with multiple bounds.
+                if (typeArgument instanceof  TypeVariableName) {
+                  TypeName bound = ((TypeVariableName) typeArgument).bounds.get(0);
+                  return WildcardTypeName.subtypeOf(bound);
+                }
+                return typeArgument;
+              }).toArray(TypeName[]::new);
+
+      typeToCastTo = ParameterizedTypeName.get(param.rawType, wildcardTypes);
+    }
+    block.add("($T) ", typeToCastTo);
+  }
+
   static void readValue(Types typeUtils, CodeBlock.Builder block, Property property,
       final TypeName parcelableType, TypeName autoValueType) {
     boolean needsNullCheck = needsNullCheck(typeUtils, property, parcelableType);
@@ -182,7 +204,7 @@ final class Parcelables {
           ? ((TypeVariableName) property.type).bounds.get(0)
           : property.type;
       if (!check.equals(PARCELABLE)) {
-        block.add("($T) ", property.type);
+        addTypecast(block, property);
       }
       block.add("in.readParcelable($T.class.getClassLoader())", autoValueType);
     } else if (parcelableType.equals(CHARSEQUENCE)) {
@@ -202,11 +224,10 @@ final class Parcelables {
     } else if (parcelableType.equals(STRINGARRAY)) {
       block.add("in.readStringArray()");
     } else if (parcelableType.equals(IBINDER)) {
-      if (property.type.equals(IBINDER)) {
-        block.add("in.readStrongBinder()");
-      } else {
-        block.add("($T) in.readStrongBinder()", property.type);
+      if (!property.type.equals(IBINDER)) {
+        addTypecast(block, property);
       }
+      block.add("in.readStrongBinder()");
     } else if (parcelableType.equals(OBJECTARRAY)) {
       block.add("in.readArray($T.class.getClassLoader())", autoValueType);
     } else if (parcelableType.equals(INTARRAY)) {
@@ -214,11 +235,10 @@ final class Parcelables {
     } else if (parcelableType.equals(LONGARRAY)) {
       block.add("in.createLongArray()");
     } else if (parcelableType.equals(SERIALIZABLE)) {
-      if (property.type.equals(SERIALIZABLE)) {
-        block.add("in.readSerializable()");
-      } else {
-        block.add("($T) in.readSerializable()", property.type);
+      if (!property.type.equals(SERIALIZABLE)) {
+        addTypecast(block, property);
       }
+      block.add("in.readSerializable()");
     } else if (parcelableType.equals(PARCELABLEARRAY)) {
       ArrayTypeName atype = (ArrayTypeName) property.type;
       if (!atype.componentType.equals(PARCELABLE)) {
