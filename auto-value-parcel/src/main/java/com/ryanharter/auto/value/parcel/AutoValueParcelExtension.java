@@ -424,26 +424,29 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
 
     MethodSpec.Builder createFromParcel = MethodSpec.methodBuilder("createFromParcel")
         .addAnnotation(Override.class);
-    if (requiresSuppressWarnings) {
-      createFromParcel.addAnnotation(createSuppressUncheckedWarningAnnotation());
-    }
     createFromParcel
         .addModifiers(PUBLIC)
         .returns(typeWithParameters)
         .addParameter(ClassName.bestGuess("android.os.Parcel"), "in");
     createFromParcel.addCode(ctorCall.build());
 
-    TypeSpec creatorImpl = TypeSpec.anonymousClassBuilder("")
-        .superclass(creatorOfClass)
-        .addMethod(createFromParcel
-            .build())
-        .addMethod(MethodSpec.methodBuilder("newArray")
+    MethodSpec.Builder newArrayMethodBuilder = MethodSpec.methodBuilder("newArray")
             .addAnnotation(Override.class)
             .addModifiers(PUBLIC)
             .returns(ArrayTypeName.of(typeWithParameters))
             .addParameter(int.class, "size")
-            .addStatement("return new $T[size]", type)
-            .build())
+            .addStatement("return new $T[size]", type);
+
+    if (requiresSuppressWarnings) {
+      AnnotationSpec annotationSpec = createSuppressUncheckedWarningAnnotation();
+      createFromParcel.addAnnotation(annotationSpec);
+      newArrayMethodBuilder.addAnnotation(annotationSpec);
+    }
+
+    TypeSpec creatorImpl = TypeSpec.anonymousClassBuilder("")
+        .superclass(creatorOfClass)
+        .addMethod(createFromParcel.build())
+        .addMethod(newArrayMethodBuilder.build())
         .build();
 
     return FieldSpec
@@ -480,6 +483,7 @@ public final class AutoValueParcelExtension extends AutoValueExtension {
   private static AnnotationSpec createSuppressUncheckedWarningAnnotation() {
     return AnnotationSpec.builder(SuppressWarnings.class)
       .addMember("value", "\"unchecked\"")
+      .addMember("value", "\"rawtypes\"")
       .build();
   }
   private ImmutableMap<TypeMirror, FieldSpec> getTypeAdapters(List<Property> properties) {

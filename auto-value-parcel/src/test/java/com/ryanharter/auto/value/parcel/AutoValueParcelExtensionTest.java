@@ -721,7 +721,7 @@ public class AutoValueParcelExtensionTest {
         "final class AutoValue_Foo extends $AutoValue_Foo {\n" +
         "  public static final Parcelable.Creator<AutoValue_Foo> CREATOR = new Parcelable.Creator<AutoValue_Foo>() {\n" +
         "    @Override\n" +
-        "    @SuppressWarnings(\"unchecked\")\n" +
+        "    @SuppressWarnings({\"unchecked\",\"rawtypes\"})\n" +
         "    public AutoValue_Foo createFromParcel(Parcel in) {\n" +
         "      return new AutoValue_Foo(\n" +
         "        in.readString(),\n" +
@@ -801,6 +801,7 @@ public class AutoValueParcelExtensionTest {
         "      );\n" +
         "    }\n" +
         "    @Override\n" +
+        "    @SuppressWarnings({\"unchecked\",\"rawtypes\"})\n" +
         "    public AutoValue_Foo[] newArray(int size) {\n" +
         "      return new AutoValue_Foo[size];\n" +
         "    }\n" +
@@ -1056,7 +1057,7 @@ public class AutoValueParcelExtensionTest {
         "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = new Parcelable.Creator<AutoValue_Test>() {\n" +
         "\n" +
         "    @Override\n" +
-        "    @SuppressWarnings(\"unchecked\")" +
+        "    @SuppressWarnings({\"unchecked\",\"rawtypes\"})" +
         "    public AutoValue_Test createFromParcel(Parcel in) {\n" +
         "      return new AutoValue_Test(\n" +
         "          (Map) in.readHashMap(Test.class.getClassLoader()),\n" +
@@ -1066,6 +1067,7 @@ public class AutoValueParcelExtensionTest {
         "      );\n" +
         "    }\n" +
         "    @Override\n" +
+        "    @SuppressWarnings({\"unchecked\",\"rawtypes\"})" +
         "    public AutoValue_Test[] newArray(int size) {\n" +
         "      return new AutoValue_Test[size];\n" +
         "    }\n" +
@@ -1252,7 +1254,7 @@ public class AutoValueParcelExtensionTest {
         + "final class AutoValue_Foo extends $AutoValue_Foo {\n"
         + "  public static final Parcelable.Creator<AutoValue_Foo> CREATOR = new Parcelable.Creator<AutoValue_Foo>() {\n"
         + "    @Override\n"
-        + "    @SuppressWarnings(\"unchecked\")\n"
+        + "    @SuppressWarnings({\"unchecked\",\"rawtypes\"})\n"
         + "    public AutoValue_Foo createFromParcel(Parcel in) {\n"
         + "      return new AutoValue_Foo(\n"
         + "          (List<String>) in.readArrayList(Foo.class.getClassLoader()),\n"
@@ -1261,6 +1263,7 @@ public class AutoValueParcelExtensionTest {
         + "      );\n"
         + "    }\n"
         + "    @Override\n"
+        + "    @SuppressWarnings({\"unchecked\",\"rawtypes\"})\n"
         + "    public AutoValue_Foo[] newArray(int size) {\n"
         + "      return new AutoValue_Foo[size];\n"
         + "    }\n"
@@ -1597,13 +1600,14 @@ public class AutoValueParcelExtensionTest {
             "final class AutoValue_Test extends $AutoValue_Test {\n" +
             "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = new Parcelable.Creator<AutoValue_Test>() {\n" +
             "    @Override\n" +
-            "    @SuppressWarnings(\"unchecked\")\n" +
+            "    @SuppressWarnings({\"unchecked\",\"rawtypes\"})\n" +
             "    public AutoValue_Test createFromParcel(Parcel in) {\n" +
             "      return new AutoValue_Test(\n" +
             "          (Optional<String>) in.readSerializable()\n" +
             "      );\n" +
             "    }\n" +
             "    @Override\n" +
+            "    @SuppressWarnings({\"unchecked\",\"rawtypes\"})\n" +
             "    public AutoValue_Test[] newArray(int size) {\n" +
             "      return new AutoValue_Test[size];\n" +
             "    }\n" +
@@ -1658,13 +1662,14 @@ public class AutoValueParcelExtensionTest {
             "final class AutoValue_Test extends $AutoValue_Test {\n" +
             "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = new Parcelable.Creator<AutoValue_Test>() {\n" +
             "    @Override\n" +
-            "    @SuppressWarnings(\"unchecked\")\n" +
+            "    @SuppressWarnings({\"unchecked\",\"rawtypes\"})\n" +
             "    public AutoValue_Test createFromParcel(Parcel in) {\n" +
             "      return new AutoValue_Test(\n" +
             "          (List<String>) in.readArrayList(Test.class.getClassLoader())\n" +
             "      );\n" +
             "    }\n" +
             "    @Override\n" +
+            "    @SuppressWarnings({\"unchecked\",\"rawtypes\"})\n" +
             "    public AutoValue_Test[] newArray(int size) {\n" +
             "      return new AutoValue_Test[size];\n" +
             "    }\n" +
@@ -1718,13 +1723,14 @@ public class AutoValueParcelExtensionTest {
             "final class AutoValue_Test extends $AutoValue_Test {\n" +
             "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = new Parcelable.Creator<AutoValue_Test>() {\n" +
             "    @Override\n" +
-            "    @SuppressWarnings(\"unchecked\")\n" +
+            "    @SuppressWarnings({\"unchecked\",\"rawtypes\"})\n" +
             "    public AutoValue_Test createFromParcel(Parcel in) {\n" +
             "      return new AutoValue_Test(\n" +
             "          (Map<String, String>) in.readHashMap(Test.class.getClassLoader())\n" +
             "      );\n" +
             "    }\n" +
             "    @Override\n" +
+            "    @SuppressWarnings({\"unchecked\",\"rawtypes\"})\n" +
             "    public AutoValue_Test[] newArray(int size) {\n" +
             "      return new AutoValue_Test[size];\n" +
             "    }\n" +
@@ -1969,7 +1975,7 @@ public class AutoValueParcelExtensionTest {
             "final class AutoValue_Test<T extends String, U extends System> extends $AutoValue_Test<T, U> {\n" +
             "  public static final Parcelable.Creator<AutoValue_Test<? extends String, ? extends System>> CREATOR = new Parcelable.Creator<AutoValue_Test<? extends String, ? extends System>>() {\n" +
             "    @Override\n" +
-            "    @SuppressWarnings(\"unchecked\")\n" +
+            "    @SuppressWarnings({\"unchecked\",\"rawtypes\"})\n" +
             "    public AutoValue_Test<? extends String, ? extends System> createFromParcel(Parcel in) {\n" +
             "      return (AutoValue_Test<? extends String, ? extends System>) new AutoValue_Test(\n" +
             "          (Test.ParcelableFoo<? extends String, ? extends System>) in.readParcelable(Test.class.getClassLoader()),\n" +
@@ -1978,6 +1984,7 @@ public class AutoValueParcelExtensionTest {
             "      );\n" +
             "    }\n" +
             "    @Override\n" +
+            "    @SuppressWarnings({\"unchecked\",\"rawtypes\"})\n" +
             "    public AutoValue_Test<? extends String, ? extends System>[] newArray(int size) {\n" +
             "      return new AutoValue_Test[size];\n" +
             "    }\n" +
